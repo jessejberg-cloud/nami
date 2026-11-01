@@ -24,7 +24,7 @@ It is a rebuild from this spec, not a port of the ChatGPT version (D28).
 
 | List | Columns |
 |---|---|
-| Records | Name*, Funder, Record type (Grant / County contract), Grant type, Program, Owner, Status, Archive reason (Closed / Declined / Not pursued), Award amount, Start date, End date, Deadline, Contact name, Contact email, Contact phone, Next (what the funder wants to know), Comments, Links, Folder link, Watch date, Watch note, plus any custom columns |
+| Records | Name*, Funder, Record type (Grant / County contract), Grant type, Program, Owner, Status, Previous status (hidden), Archive reason (Closed / Declined / Not pursued), Award amount, Start date, End date, Deadline, Contact name, Contact email, Contact phone, Next (what the funder wants to know), Comments, Links, Folder link, Watch date, Watch note, plus any custom columns |
 | Award Years | Record, Year, Amount (multi-year and irregular records only) |
 | Tasks | Record, Title, Type (Thank-you letter / 6-month report / 1-year report / Review / Other), Due date, Assigned to, Steps (one per line), Done |
 | Progress | Task, Person, Step, Done, Comment, Date (viewers can add) |
@@ -132,7 +132,7 @@ Free Netlify account owned by NAMI, Jesse added. App registered in NAMI's Micros
 
 - **Urgency look and words (Nov 1, Jesse).** No red and no "overdue" or "deadline". Items that are due soon or past their date show a calm accent color, an icon and plain words ("Past due date", "Due this week"), and sort to the top of each tile.
 - **Required fields (Nov 1, Jesse).** Only Name is required. Status starts as Potentials and Owner as the person adding it; both can be changed. This replaces D10.
-- **Active (Nov 1, default).** People pick Awarded. The dashboard shows it as Active while today is within the start and end dates, as Awarded before the start date, and adds a "Past end date" item to To-do once the end date passes; a person then sets Archived (T5). Stored statuses: Potentials, Upcoming, Applied, Awarded, Archived.
+- **Active (Nov 1, default).** People pick Awarded. The dashboard shows it as Active while today is within the start and end dates, as Awarded before the start date and again after the end date, and adds a "Past end date" item to To-do once the end date passes; a person then sets Archived (T5). Stored statuses: Potentials, Upcoming, Applied, Awarded, Archived.
 - **Hosting (Nov 1, default).** A NAMI-owned Netlify account (D27). STATUS.md's phase-two plan for Cloudflare does not apply to v2.
 - **Old programs (Nov 1, default).** The ChatGPT Grant Dashboard and Grant Radar keep running until v2 launches; the ChatGPT data is exported as CSV at the setup visit (D28).
 - **"Deadline" on screen (Nov 1, default).** The Records column is stored as Deadline, but its default label is "Apply by", matching Grant Radar. Upcoming reads "(decided to apply, apply-by date ahead)".
@@ -144,6 +144,7 @@ Free Netlify account owned by NAMI, Jesse added. App registered in NAMI's Micros
 
 - **Schema additions (Nov 1, default, Phase 1).** Feeds also take the type "Quick link", for the Wisconsin DHS page and other links that are not feeds. People has an Email column, so sign-in can match a person to their row. Settings keeps a `customColumns` row (key|label|type) so the page knows which extra Records columns to show and filter.
 - **Sample dates (Nov 1, default, Phase 1).** The sample's dates are fixed the first time it loads in a browser and kept after that, so edits survive. "Start the sample over" rebuilds them around the new today.
+- **Phase 2 choices (Nov 1, default).** The status dropdown lists the five stored statuses, each with its explanation; Awarded reads "(won; shows as Active while it runs)". Records keep a hidden PreviousStatus column so Restore puts an archived record back where it was (Potentials if unknown). Archive asks for a reason but does not require one. Records are grouped by status, with Upcoming first; inside a group, ones with a calm "Due soon", "Apply-by date passed" or "Past end date" note sort to the top. Every change shows a one-line note with Undo for 8 seconds.
 
 ## How decisions are made
 

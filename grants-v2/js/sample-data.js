@@ -3,7 +3,6 @@
 
   FICTIONAL. Every funder, amount, contact and person below is made up for practice and
   testing. None of it is a real NAMI award, contract, obligation or staff assignment.
-  Dates are set relative to the day the sample is first loaded in a browser.
 
   "Partner foundation news" is a feed link that will not load (example.org has no feed), so
   Phase 6 can show its "not loading" note. "Warmline Volunteer Training" carries a custom

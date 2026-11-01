@@ -8,22 +8,54 @@
 </head>
 <body>
   <header class="top">
-    <h1>Grants Dashboard</h1>
-    <p class="mode" id="mode">Sample data</p>
+    <h1>Grants</h1>
+    <p class="mode">Sample data</p>
   </header>
 
-  <main id="main">
-    <p class="quiet" id="status">Loading</p>
+  <nav class="tabs" aria-label="Show">
+    <button type="button" data-tab="Grant" aria-pressed="true">Grants</button>
+    <button type="button" data-tab="County contract" aria-pressed="false">County contracts</button>
+    <button type="button" data-tab="Archive" aria-pressed="false">Archive</button>
+  </nav>
+
+  <div class="bar">
+    <label class="search">
+      <span class="sr">Search</span>
+      <input type="search" id="search" placeholder="Search" autocomplete="off">
+    </label>
+    <button type="button" id="add" class="primary">Add</button>
+  </div>
+
+  <form id="addForm" class="addForm" hidden>
+    <label for="addName">Name</label>
+    <input id="addName" autocomplete="off">
+    <button type="submit" class="primary">Save</button>
+    <button type="button" id="addCancel" class="link">Cancel</button>
+  </form>
+
+  <main id="records" aria-live="polite">
+    <p class="quiet">Loading</p>
   </main>
+
+  <dialog id="detail" aria-labelledby="detailName"></dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toastText"></span>
+    <button type="button" id="toastUndo" class="link">Undo</button>
+  </div>
 
   <footer class="foot">
     <span id="stamp"></span>
-    <button type="button" id="reset" class="link">Start the sample over</button>
+    <span>
+      <a href="lists.html">All lists</a>
+      <button type="button" id="reset" class="link">Start the sample over</button>
+    </span>
   </footer>
 
   <script src="js/schema.js"></script>
   <script src="js/sample-data.js"></script>
   <script src="js/data.js"></script>
-  <script src="js/check.js"></script>
+  <script src="js/derive.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

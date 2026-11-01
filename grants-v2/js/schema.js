@@ -9,6 +9,7 @@
     choices  for choice columns: the default options (editable later from Settings)
     list     for lookup columns: the list it points to
     required true only where SPEC.md says so (Records: Name)
+    hidden   kept by the page for its own use (Restore), never shown as a field
 
   Loaded as an ordinary script so the page opens straight from a folder.
 */
@@ -20,7 +21,7 @@
     Potentials: "opportunities we're considering",
     Upcoming: 'decided to apply, apply-by date ahead',
     Applied: 'submitted, waiting to hear',
-    Awarded: 'awarded',
+    Awarded: 'won; shows as Active while it runs',
     Active: 'awarded, currently running',
     Archived: 'finished: Closed, Declined or Not pursued'
   };
@@ -36,6 +37,7 @@
         { key: 'program', sp: 'Program', label: 'Program', type: 'choice', choicesFrom: 'programs' },
         { key: 'owner', sp: 'Owner', label: 'Owner', type: 'person', fallback: '@me' },
         { key: 'status', sp: 'Status', label: 'Status', type: 'choice', choices: STATUS, fallback: 'Potentials' },
+        { key: 'previousStatus', sp: 'PreviousStatus', label: 'Status before archiving', type: 'choice', choices: STATUS, hidden: true },
         { key: 'archiveReason', sp: 'ArchiveReason', label: 'Archive reason', type: 'choice', choices: ['Closed', 'Declined', 'Not pursued'] },
         { key: 'awardAmount', sp: 'AwardAmount', label: 'Award amount', type: 'currency' },
         { key: 'startDate', sp: 'StartDate', label: 'Start date', type: 'date' },
