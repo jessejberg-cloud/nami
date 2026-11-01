@@ -24,7 +24,7 @@ It is a rebuild from this spec, not a port of the ChatGPT version (D28).
 
 | List | Columns |
 |---|---|
-| Records | Name*, Funder*, Record type (Grant / County contract), Grant type, Program, Owner*, Status*, Archive reason (Closed / Declined / Not pursued), Award amount, Start date, End date, Deadline, Contact name, Contact email, Contact phone, Next (what the funder wants to know), Comments, Links, Folder link, Watch date, Watch note, plus any custom columns |
+| Records | Name*, Funder, Record type (Grant / County contract), Grant type, Program, Owner, Status, Archive reason (Closed / Declined / Not pursued), Award amount, Start date, End date, Deadline, Contact name, Contact email, Contact phone, Next (what the funder wants to know), Comments, Links, Folder link, Watch date, Watch note, plus any custom columns |
 | Award Years | Record, Year, Amount (multi-year and irregular records only) |
 | Tasks | Record, Title, Type (Thank-you letter / 6-month report / 1-year report / Review / Other), Due date, Assigned to, Steps (one per line), Done |
 | Progress | Task, Person, Step, Done, Comment, Date (viewers can add) |
@@ -34,7 +34,7 @@ It is a rebuild from this spec, not a port of the ChatGPT version (D28).
 | People | Person, Role, Programs |
 | Settings | Key, Value (programs, grant types, fiscal-year start = January, default award view, filters on/off, Grants.gov keywords) |
 
-\* = required in the source plan; see open point 2. Calendar year (D8). Computed, not stored: Active, active years, multi-year flag, due-soon and past-date flags.
+Only Name is required (see Decided); Funder, Status and Owner were starred in the source plan. Calendar year (D8). Computed, not stored: Active, active years, multi-year flag, due-soon and past-date flags.
 
 Grant types: an editable dropdown of Federal, State, County, Foundation, Corporate, Other (D11). No documents are stored (D15).
 
@@ -131,13 +131,13 @@ Free Netlify account owned by NAMI, Jesse added. App registered in NAMI's Micros
 ## Decided
 
 - **Urgency look and words (Nov 1, Jesse).** No red and no "overdue" or "deadline". Items that are due soon or past their date show a calm accent color, an icon and plain words ("Past due date", "Due this week"), and sort to the top of each tile.
+- **Required fields (Nov 1, Jesse).** Only Name is required. Status starts as Potentials and Owner as the person adding it; both can be changed. This replaces D10.
 
 ## Open points (Jesse's call, one at a time)
 
-1. **Required fields.** D10 requires Name, Funder, Status, Owner; the guide says nothing is required. Recommended: Name only, with Status defaulting to Potentials and Owner to the person adding it.
-2. **Active.** Stored as a status, or computed from Awarded + today within dates (T4)? Recommended: store Awarded, show Active or Ended automatically.
-3. **Hosting** is Netlify (D27); STATUS.md still says Cloudflare for phase two. Recommended: Netlify, and update STATUS.md.
-4. **Grant Radar and the live ChatGPT Dashboard** keep running until v2 launches.
+1. **Active.** Stored as a status, or computed from Awarded + today within dates (T4)? Recommended: store Awarded, show Active or Ended automatically.
+2. **Hosting** is Netlify (D27); STATUS.md still says Cloudflare for phase two. Recommended: Netlify, and update STATUS.md.
+3. **Grant Radar and the live ChatGPT Dashboard** keep running until v2 launches.
 
 ## Early tests (not yet run)
 
