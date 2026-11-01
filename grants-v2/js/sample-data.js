@@ -93,7 +93,8 @@
     var feeds = [
       row({ name: 'Grants.gov: mental health and peer support', type: 'Grants.gov', source: 'mental health; peer support; crisis; suicide prevention; family support', on: true }),
       row({ name: 'Partner foundation news (sample)', type: 'Feed link', source: 'https://example.org/feed.xml', on: true }),
-      row({ name: 'Wisconsin DHS funding opportunities', type: 'Quick link', source: 'https://www.dhs.wisconsin.gov/', on: true })
+      row({ name: 'Wisconsin DHS funding opportunities', type: 'Quick link', source: 'https://www.dhs.wisconsin.gov/', on: true }),
+      row({ name: 'Wisconsin DHS email sign-up', type: 'Quick link', source: '', on: true })
     ];
 
     var labels = [
@@ -103,7 +104,7 @@
       row({ key: 'status.Awarded', defaultText: 'Awarded', customText: '' }),
       row({ key: 'status.Active', defaultText: 'Active', customText: '' }),
       row({ key: 'status.Archived', defaultText: 'Archived', customText: '' }),
-      row({ key: 'tile.fundingWatch', defaultText: 'Funding Watch', customText: '' })
+      row({ key: 'tile.watch', defaultText: 'Funding Watch', customText: '' })
     ];
 
     var peopleList = [
@@ -132,7 +133,22 @@
     };
   }
 
-  var api = { build: build };
+  // What the feeds "find" when the page is opened straight from a folder, where there is no feed
+  // function to ask. Fictional, like the rest. The partner feed never loads, to show "Not loading".
+  function feedResults(feed, today) {
+    var base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    function d(days) { var x = new Date(base); x.setDate(x.getDate() + days); return x.toISOString().slice(0, 10); }
+    if (feed.type !== 'Grants.gov') return Promise.reject(new Error('not loading'));
+    return Promise.resolve([
+      { id: 'gg-s1', title: 'Peer Support Workforce Expansion (sample)', source: 'Federal health agency (sample)', date: d(18), opens: d(-20), url: 'https://www.grants.gov/#sample-1' },
+      { id: 'gg-s2', title: 'Community Crisis Response Partnerships (sample)', source: 'Federal health agency (sample)', date: d(33), opens: d(-5), url: 'https://www.grants.gov/#sample-2' },
+      { id: 'gg-s3', title: 'Family Support Networks for Serious Mental Illness (sample)', source: 'Federal family services office (sample)', date: d(52), opens: d(-2), url: 'https://www.grants.gov/#sample-3' },
+      { id: 'gg-s4', title: 'Youth Suicide Prevention in Schools (sample)', source: 'Federal education office (sample)', date: d(75), opens: '', url: 'https://www.grants.gov/#sample-4' },
+      { id: 'gg-s5', title: 'Rural Mental Health Outreach, forecast (sample)', source: 'Federal rural health office (sample)', date: '', opens: '', url: 'https://www.grants.gov/#sample-5' }
+    ]);
+  }
+
+  var api = { build: build, feedResults: feedResults };
   root.NAMI = root.NAMI || {};
   root.NAMI.sample = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

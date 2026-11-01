@@ -94,7 +94,8 @@
         { key: 'repeatsYearly', sp: 'RepeatsYearly', label: 'Repeats yearly', type: 'yesno' },
         { key: 'link', sp: 'Link', label: 'Link', type: 'url' },
         { key: 'notes', sp: 'Notes', label: 'Notes', type: 'note' },
-        { key: 'record', sp: 'LinkedRecord', label: 'Linked record', type: 'lookup', list: 'records' }
+        { key: 'record', sp: 'LinkedRecord', label: 'Linked record', type: 'lookup', list: 'records' },
+        { key: 'lastReviewed', sp: 'LastReviewed', label: 'Last reviewed', type: 'date', hidden: true }
       ]
     },
     {

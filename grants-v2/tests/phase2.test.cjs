@@ -107,7 +107,7 @@ test('in the browser: add, edit, status change, archive, restore, Undo, all kept
   // Change to Upcoming, then archive
   await page.selectOption('#f-status', 'Upcoming');
   await page.waitForFunction(() => window.NAMI.app.store.items('records').some((r) => r.name === 'Test grant from the browser' && r.status === 'Upcoming'));
-  await page.click('.detailActions button');
+  await page.click('.detailActions button:has-text("Archive"), .detailActions button:has-text("Restore")');
   await page.waitForSelector('#f-archiveReason');
   await page.selectOption('#f-archiveReason', 'Not pursued');
   await page.waitForFunction(() => window.NAMI.app.store.items('records').some((r) => r.name === 'Test grant from the browser' && r.archiveReason === 'Not pursued'));
@@ -125,7 +125,7 @@ test('in the browser: add, edit, status change, archive, restore, Undo, all kept
 
   // Restore puts it back to the status it had
   await page.click('#archiveList .row');
-  await page.click('.detailActions button');
+  await page.click('.detailActions button:has-text("Archive"), .detailActions button:has-text("Restore")');
   await page.waitForFunction(() => window.NAMI.app.store.items('records').some((r) => r.name === 'Test grant from the browser' && r.status === 'Upcoming' && !r.archiveReason));
 
   // Kept after a reload

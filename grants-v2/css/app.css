@@ -103,7 +103,7 @@ dialog::backdrop { background: rgba(35,48,47,.25); }
 .plainList li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .links a { word-break: break-all; }
 .problem { margin: 0; color: var(--attention); background: var(--attention-bg); border-radius: 10px; padding: 8px 12px; }
-.detailActions { display: flex; justify-content: flex-end; }
+.detailActions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: #fff; border-radius: 999px; padding: 10px 18px; display: flex; gap: 14px; align-items: center; box-shadow: 0 6px 20px rgba(0,0,0,.2); z-index: 10; max-width: calc(100vw - 32px); }
 .toast .link { color: #cfe6f2; font-weight: 600; }
 @media (max-width: 600px) {
@@ -231,3 +231,31 @@ body.moving { user-select: none; -webkit-user-select: none; cursor: grabbing; }
 .steps.readOnly li { gap: 4px 10px; }
 .steps .mark { width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--s-Active); flex: none; }
 .steps .done .mark { border-color: var(--s-Active); }
+
+/* ---------- Phase 6: Funding Watch ---------- */
+.watchCols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+.watchPart { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.watchPart h3 { margin: 0; font-size: 1rem; }
+.feeds, .results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.feed { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; min-width: 0; }
+.feed.off .feedName { color: var(--quiet); font-weight: 400; }
+.feedHead { display: flex; gap: 6px 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.feedName { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+a.feedName { font-weight: 600; }
+.feedTools { display: inline-flex; gap: 14px; align-items: center; }
+.feedBody { display: grid; gap: 6px; }
+.feed p { margin: 0; font-size: .9rem; }
+.notLoading { display: inline-flex; gap: 6px; align-items: center; }
+.result { display: flex; gap: 6px 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size: .9rem; border-top: 1px solid var(--line); padding-top: 6px; }
+.resultMain { display: grid; min-width: 0; flex: 1 1 14em; }
+.resultMain a { font-weight: 600; overflow-wrap: anywhere; }
+.resultMain .quiet { font-size: .8rem; }
+.link.added { display: inline-flex; gap: 4px; align-items: center; color: var(--s-Active); font-size: .85rem; }
+button.small { font-size: .85rem; padding: 4px 12px; }
+.addFeed { display: flex; gap: 8px 12px; align-items: flex-end; flex-wrap: wrap; }
+.addFeed .field { flex: 1 1 9em; }
+.addFeed .problem { flex-basis: 100%; font-size: .9rem; }
+.watchBox { display: grid; gap: 8px; }
+.todo.review { flex-wrap: wrap; }
+.reviewActions { flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 800px) { .watchCols { grid-template-columns: minmax(0, 1fr); } }

@@ -37,7 +37,8 @@
     { key: 'pipeline', text: 'Pipeline', wide: true },
     { key: 'awards', text: 'Awards' },
     { key: 'contracts', text: 'County contracts' },
-    { key: 'archive', text: 'Archive' }
+    { key: 'archive', text: 'Archive' },
+    { key: 'watch', text: 'Funding Watch', wide: true }
   ];
 
   var SECTIONS = [
@@ -46,6 +47,8 @@
     { key: 'tasks', text: 'Tasks' },
     { key: 'awardYears', text: 'Award years' },
     { key: 'taskDetails', text: 'Task details' },
+    { key: 'feeds', text: 'Feeds' },
+    { key: 'watchList', text: 'Watch list' },
     { key: 'more', text: 'More details' }
   ];
 

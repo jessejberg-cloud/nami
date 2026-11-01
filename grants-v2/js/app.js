@@ -1,6 +1,9 @@
 /*
   NAMI Grants Dashboard v2: the page.
 
+  Phase 6: Funding Watch. Feeds (Grants.gov through the feed function, RSS or Atom links, quick
+  links) with "Add as Potentials" on each result; the Watch list (cycles by month, and records with
+  a watch date); a Review item in To-do when a cycle month or watch date arrives (js/watch.js).
   Phase 5: sign-in (Sample "Signed in as", or Microsoft through js/auth.js), Editor and Viewer roles
   from the People list (js/access.js guards every change), program views for viewers, and a task
   view where steps are checked off and comments added (the Progress list).
@@ -19,6 +22,11 @@
   var N = window.NAMI;
   var schema = N.schema, derive = N.derive, S = N.settings;
   var A = N.access;
+  var W = N.watch;
+  var CFG = window.NAMI_CONFIG || {};
+  // Opened straight from a folder there is no feed function to ask, so the feeds show sample results
+  var feedEndpoint = (CFG.feeds && CFG.feeds.endpoint) || (location.protocol === 'file:' ? 'sample' : '/.netlify/functions/feeds');
+  var feedClient = W.createFeedClient({ endpoint: feedEndpoint, sampleResults: function (f) { return N.sample.feedResults(f, new Date()); } });
   var rawStore = N.data.createSampleStore({ storage: window.localStorage });
   // Every change passes the signed-in person's role; a viewer can only log progress on their tasks
   var store = A.guard(rawStore, function () { return state.who; });
@@ -27,7 +35,7 @@
   function isEditor() { return A.can(state.who, 'edit'); }
 
   var ORDER = ['Potentials', 'Upcoming', 'Applied', 'Active', 'Awarded'];
-  var state = { view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, openTaskId: null, undo: null, toastAction: null, who: null, myPrograms: false };
+  var state = { view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, openTaskId: null, openWatchId: null, undo: null, toastAction: null, who: null, myPrograms: false };
   // Choices a person makes on the page (Award year or Spread, My to-do) are kept per browser
   var CHOICE_KEY = 'nami-grants-v2-choices';
   try { var kept = JSON.parse(window.localStorage.getItem(CHOICE_KEY)) || {}; state.myTodo = !!kept.myTodo; state.awardView = kept.awardView || ''; } catch (e) { /* fine without */ }
@@ -160,14 +168,22 @@
     if (a) { state.toastAction = null; $('toast').hidden = true; a.run(); return; }
     var u = state.undo; if (!u) return;
     state.undo = null; $('toast').hidden = true;
-    var list = u.list || 'records';
-    var p = u.added ? store.remove(list, u.id) : store.restore(list, u.before);
-    p.catch(function (e) { console.error(e); toast('That could not be put back.'); return Promise.reject(null); }).then(function () {
-      if (u.added && ((list === 'records' && state.openId === u.id) || (list === 'tasks' && state.openTaskId === u.id))) closeDetail();
+    undoOne(u).catch(function (e) { console.error(e); toast('That could not be put back.'); return Promise.reject(null); }).then(function () {
+      state.afterClose = u.home || null; // where focus goes if the open view is gone now
       render(); reopen(u.focus);
+      if (!dialog.open && u.home) { var h = document.querySelector(u.home); if (h) h.focus(); }
       toast('Put back.');
     }).catch(function () { /* already said */ });
   });
+
+  // undo: { list, before } puts a change back; { list, id, added } takes an add away;
+  // { list, readd } adds a removed item again; { steps: [...] } runs several, in order
+  function undoOne(u) {
+    var list = u.list || 'records';
+    if (u.steps) return u.steps.reduce(function (p, s) { return p.then(function () { return undoOne(s); }); }, Promise.resolve());
+    if (u.readd) return store.add(list, u.readd);
+    return u.added ? store.remove(list, u.id) : store.restore(list, u.before);
+  }
 
   // ---------- filters ----------
 
@@ -556,6 +572,12 @@
         items.push({ kind: 'ended', date: r.endDate, title: r.name, record: r, note: tagText({ key: 'pastEnd' }) });
       }
     });
+    // Review: a watched cycle's month, or a record's watch date, has arrived. Watch-list rows
+    // belong to nobody, so My to-do shows only the person's own records here.
+    W.reviewItems(mineOnly ? [] : store.items('watch'), recs.filter(function (r) { return !mineOnly || r.owner === me(); }), today).forEach(function (it) {
+      if (it.watch && it.watch.record) it.record = store.get('records', it.watch.record);
+      items.push(it);
+    });
     items.sort(function (a, b) {
       var na = a.note ? 0 : 1, nb = b.note ? 0 : 1;
       if (na !== nb) return na - nb;
@@ -573,8 +595,18 @@
       var n = stepsDone(it.task);
       if (n) meta.push(n === 1 ? '1 step done' : n + ' steps done');
     }
-    var open = function () { if (it.kind === 'task') openTask(it.task.id); else if (it.record) openDetail(it.record.id); };
-    var main = el('button', { type: 'button', class: 'todoMain', 'data-id': it.kind !== 'task' && it.record ? it.record.id : null, 'data-task': it.kind === 'task' ? it.task.id : null, onclick: open }, [
+    if (it.kind === 'review') {
+      if (it.watch) meta.push(it.watch.kind || '', it.record ? it.record.name : '');
+      else if (it.record.watchNote) meta.push(it.record.watchNote);
+      meta = meta.filter(Boolean);
+    }
+    var open = function () {
+      if (it.kind === 'task') openTask(it.task.id);
+      else if (it.kind === 'review' && it.watch) openWatch(it.watch.id);
+      else if (it.record) openDetail(it.record.id);
+    };
+    var reviewOfWatch = it.kind === 'review' && it.watch;
+    var main = el('button', { type: 'button', class: 'todoMain', 'data-id': it.kind !== 'task' && !reviewOfWatch && it.record ? it.record.id : null, 'data-task': it.kind === 'task' ? it.task.id : null, 'data-watch': reviewOfWatch ? it.watch.id : null, onclick: open }, [
       el('span', { class: 'rowName', text: it.title }),
       el('span', { class: 'rowMeta', text: meta.join(' · ') }),
       it.note ? tagEl({ text: it.note, tone: 'attention' }) : null
@@ -584,7 +616,41 @@
       kids.push(el('button', { type: 'button', class: 'check', 'aria-label': 'Mark done: ' + it.title, title: 'Mark done', onclick: function () { markDone(it.task); } }, [icon('check')]));
     }
     kids.push(main);
-    return el('li', { class: 'todo' }, kids);
+    if (it.kind === 'review' && isEditor()) kids.push(reviewActions(it));
+    return el('li', { class: 'todo' + (it.kind === 'review' ? ' review' : '') }, kids);
+  }
+
+  // ---------- Review items: make a record from a watched cycle, or set it aside until next time ----------
+
+  function reviewActions(it) {
+    var name = it.watch ? it.watch.name : it.record.name;
+    var kids = [];
+    if (it.watch && !it.record) {
+      ['Potentials', 'Upcoming'].forEach(function (st) {
+        kids.push(el('button', { type: 'button', class: 'quietBtn small', 'aria-label': 'Add ' + name + ' as ' + statusName(st), onclick: function () { recordFromWatch(it.watch, st); } }, ['Add as ' + statusName(st)]));
+      });
+    }
+    kids.push(el('button', { type: 'button', class: 'quietBtn small', 'aria-label': 'Done for now: ' + name, onclick: function () { reviewed(it); } }, ['Done for now']));
+    return el('div', { class: 'reviewActions' }, kids);
+  }
+
+  function recordFromWatch(w, status) {
+    var today = derive.iso(new Date());
+    var fields = { name: w.name, status: status, comments: w.notes || '', links: safeUrl(w.link) || '' };
+    store.add('records', fields, { me: me() }).then(function (r) {
+      return store.update('watch', w.id, { record: r.id, lastReviewed: today }).then(function (res) {
+        render(); openDetail(r.id);
+        toast('Added as ' + statusName(status) + '.', { steps: [{ list: 'watch', before: res.before }, { list: 'records', id: r.id, added: true }], home: '[data-tile=todo] [data-watch="' + w.id + '"]' });
+      });
+    }).catch(function (e) { console.error(e); toast('That did not save.'); });
+  }
+
+  // The watched cycle comes back next year; a record's watch date is cleared (Undo brings it back)
+  function reviewed(it) {
+    var p = it.watch
+      ? store.update('watch', it.watch.id, { lastReviewed: derive.iso(new Date()) }).then(function (res) { return { list: 'watch', before: res.before }; })
+      : store.update('records', it.record.id, { watchDate: '' }).then(function (res) { return { list: 'records', before: res.before }; });
+    p.then(function (undo) { render(); toast('Done for now.', undo); }).catch(function (e) { console.error(e); toast('That did not save.'); });
   }
 
   function markDone(task) {
@@ -638,6 +704,7 @@
     tiles.pipeline = (tile('pipeline', [pipe], { wide: true }));
 
     tiles.awards = awardsTile(today);
+    tiles.watch = watchTile(today, recsAll);
 
     // County contracts
     var cc = active.filter(function (r) { return r.recordType === 'County contract'; }).sort(attentionFirst(today));
@@ -719,6 +786,273 @@
       sheet,
       more(state.expanded.awards ? 'Hide the list' : 'Show the list', function () { state.expanded.awards = !state.expanded.awards; render(); })
     ], { head: toggle });
+  }
+
+  // ---------- Funding Watch: feeds and the watch list ----------
+
+  // Results kept per feed while the page is open: { key, state: 'loading' | 'ok' | 'error', items }
+  var feedCache = {};
+  var RETRY_MS = 3 * 60 * 1000;
+  function feedKey(f) { return [f.id, f.type, f.source].join('|'); }
+  function feedState(f) {
+    var k = feedKey(f), c = feedCache[f.id];
+    // A feed that did not answer is asked again after a few minutes
+    if (c && c.key === k && !(c.state === 'error' && Date.now() - c.at > RETRY_MS)) return c;
+    c = feedCache[f.id] = { key: k, state: 'loading', items: [], at: Date.now() };
+    feedClient.load(f).then(function (items) { c.state = 'ok'; c.items = items || []; })
+      .catch(function (e) { console.warn('Feed not loading:', f.name, e && e.message); c.state = 'error'; c.at = Date.now(); })
+      .then(function () { if (feedCache[f.id] === c) refreshFeeds(); });
+    return c;
+  }
+  function refreshFeeds() {
+    var box = $('feeds');
+    if (box) keepFocus(function () { fillFeeds(box, new Date()); });
+  }
+
+  function watchTile(today, recsAll) {
+    var editor = isEditor();
+    var feedsBox = el('div', { id: 'feeds', class: 'feedsBox' });
+    if (!state.layout.collapsed.watch) fillFeeds(feedsBox, today);
+    return tile('watch', [el('div', { class: 'watchCols' }, [
+      el('div', { class: 'watchPart' }, [el('h3', { text: sectionName('feeds') }), feedsBox, editor ? opener('addingFeed', 'openAddFeed', 'Add feed', addFeedForm, 'newFeedName') : null]),
+      el('div', { class: 'watchPart' }, [el('h3', { text: sectionName('watchList') }), watchList(today, recsAll), editor ? opener('addingWatch', 'openAddWatch', 'Add to the list', addWatchForm, 'newWatchName') : null])
+    ])], { wide: true });
+  }
+
+  // A small form that stays out of the way until it is asked for
+  function opener(flag, id, text, makeForm, first) {
+    if (!state[flag]) return el('button', { type: 'button', class: 'link more', id: id, text: text, onclick: function () {
+      state[flag] = true; render(); var f = $(first); if (f) f.focus();
+    } });
+    var form = makeForm();
+    form.appendChild(el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { closeOpener(flag, id); } }));
+    return form;
+  }
+  function closeOpener(flag, id) { state[flag] = false; render(); var b = $(id); if (b) b.focus(); }
+
+  function fillFeeds(box, today) {
+    box.innerHTML = '';
+    var editor = isEditor();
+    var feeds = store.items('feeds').filter(function (f) { return editor || derive.isYes(f.on); });
+    if (!feeds.length) { box.appendChild(el('p', { class: 'quiet empty', text: '·' })); return; }
+    var ul = el('ul', { class: 'feeds' });
+    var recs = store.items('records');
+    feeds.forEach(function (f) {
+      var on = derive.isYes(f.on);
+      var link = f.type === 'Quick link' && safeUrl(f.source);
+      var head = el('div', { class: 'feedHead' }, [
+        link ? el('a', { href: link, target: '_blank', rel: 'noopener noreferrer', class: 'feedName', text: f.name || f.source }) : el('strong', { class: 'feedName', text: f.name || f.source || 'Feed' }),
+        editor ? el('span', { class: 'feedTools' }, [feedToggle(f, on),
+          el('button', { type: 'button', class: 'link', 'data-feed-edit': f.id, 'aria-label': 'Edit ' + (f.name || 'feed'), text: 'Edit', onclick: function () { openFeed(f.id); } }),
+          el('button', { type: 'button', class: 'link', 'aria-label': 'Remove ' + (f.name || 'feed'), text: 'Remove', onclick: function () { removeFeed(f); } })]) : null
+      ]);
+      var kids = [head];
+      if (on && f.type !== 'Quick link') kids.push(feedBody(f, recs));
+      ul.appendChild(el('li', { class: 'feed' + (on ? '' : ' off'), 'data-feed': f.id }, kids));
+    });
+    box.appendChild(ul);
+  }
+
+  function feedToggle(f, on) {
+    var box = el('input', { type: 'checkbox', id: 'feed-on-' + f.id });
+    box.checked = on;
+    box.addEventListener('change', function () {
+      store.update('feeds', f.id, { on: box.checked }).then(function (res) {
+        render(); toast(box.checked ? 'Feed on.' : 'Feed off.', { list: 'feeds', before: res.before, focus: null });
+      }).catch(function (e) { console.error(e); box.checked = on; });
+    });
+    return el('label', { class: 'toggle' }, [box, 'On', el('span', { class: 'sr', text: ': ' + (f.name || 'feed') })]);
+  }
+
+  function feedBody(f, recs) {
+    var c = feedState(f);
+    if (c.state === 'loading') return el('p', { class: 'quiet', text: 'Loading' });
+    if (c.state === 'error') return el('p', { class: 'quiet notLoading' }, [icon('plain'), 'Not loading right now']);
+    if (!c.items.length) return el('p', { class: 'quiet', text: '·' });
+    var all = !!state.expanded['feed-' + f.id];
+    var ul = el('ul', { class: 'results' });
+    c.items.slice(0, all ? 99 : 3).forEach(function (it) { ul.appendChild(resultRow(it, f, recs)); });
+    return el('div', { class: 'feedBody' }, [ul,
+      c.items.length > 3 && !all ? more('Show all', function () { state.expanded['feed-' + f.id] = true; refreshFeeds(); }) : null]);
+  }
+
+  function resultRow(it, f, recs) {
+    var meta = [it.source, it.date ? (f.type === 'Grants.gov' ? 'Closes ' : 'Posted ') + niceDate(it.date) : ''].filter(Boolean).join(' · ');
+    var url = safeUrl(it.url);
+    var have = url && recs.filter(function (r) { return String(r.links || '').split(/\s+/).indexOf(url) !== -1; })[0];
+    var side = null;
+    if (have) side = el('button', { type: 'button', class: 'link added', 'data-id': have.id, 'aria-label': 'Added: open ' + have.name, onclick: function () { openDetail(have.id); } }, [icon('check'), 'Added']);
+    else if (isEditor()) side = el('button', { type: 'button', class: 'quietBtn small', 'aria-label': 'Add as ' + statusName('Potentials') + ': ' + it.title, onclick: function () { addFromResult(it, f); } }, ['Add as ' + statusName('Potentials')]);
+    return el('li', { class: 'result' }, [
+      el('div', { class: 'resultMain' }, [
+        url ? el('a', { href: url, target: '_blank', rel: 'noopener noreferrer', text: it.title }) : el('span', { text: it.title }),
+        meta ? el('span', { class: 'quiet', text: meta }) : null
+      ]),
+      side
+    ]);
+  }
+
+  function addFromResult(it, f) {
+    var fields = { name: it.title, funder: it.source || '', deadline: /^\d{4}-\d{2}-\d{2}$/.test(it.date || '') && f.type === 'Grants.gov' ? it.date : '', links: safeUrl(it.url) || '', status: 'Potentials' };
+    if (f.type === 'Grants.gov') fields.grantType = 'Federal';
+    store.add('records', fields, { me: me() }).then(function (r) {
+      render();
+      toast('Added to ' + statusName('Potentials') + '.', { list: 'records', id: r.id, added: true });
+    }).catch(function (e) { console.error(e); toast('That did not save.'); });
+  }
+
+  function removeFeed(f) {
+    var keep = {}; Object.keys(f).forEach(function (k) { if (k !== 'id' && k !== 'modified') keep[k] = f[k]; }); // created stays
+    store.remove('feeds', f.id).then(function () {
+      delete feedCache[f.id];
+      render(); toast((f.name || 'Feed') + ' removed.', { list: 'feeds', readd: keep });
+    }).catch(function (e) { console.error(e); toast('That did not save.'); });
+  }
+
+  function addFeedForm() {
+    var name = el('input', { id: 'newFeedName', autocomplete: 'off' });
+    var type = el('select', { id: 'newFeedType' });
+    schema.column('feeds', 'type').choices.forEach(function (t) { type.appendChild(el('option', { value: t, text: t })); });
+    var source = el('input', { id: 'newFeedSource', autocomplete: 'off' });
+    var sourceLabel = el('label', { for: 'newFeedSource' });
+    var problem = el('p', { class: 'problem', hidden: true });
+    function relabel() { sourceLabel.textContent = type.value === 'Grants.gov' ? 'Keywords' : 'Link'; }
+    type.addEventListener('change', relabel); relabel();
+    var form = el('form', { class: 'addFeed' }, [
+      el('div', { class: 'field' }, [el('label', { for: 'newFeedName', text: 'New feed' }), name]),
+      el('div', { class: 'field' }, [el('label', { for: 'newFeedType', text: 'Kind' }), type]),
+      el('div', { class: 'field' }, [sourceLabel, source]),
+      problem,
+      el('button', { type: 'submit', class: 'quietBtn', id: 'addFeed' }, ['Add feed'])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      problem.hidden = true;
+      var src = source.value.trim(), nm = name.value.trim();
+      if (!nm && !src) { name.focus(); return; }
+      if (type.value !== 'Grants.gov' && src && !W.safeFeedUrl(src)) {
+        problem.textContent = 'That link needs to be a web address, like https://example.org/feed.xml.';
+        problem.hidden = false; source.focus(); return;
+      }
+      if (type.value === 'Feed link' && !src) { source.focus(); return; }
+      store.add('feeds', { name: nm || src, type: type.value, source: src, on: true }).then(function (f) {
+        closeOpener('addingFeed', 'openAddFeed');
+        toast('Feed added.', { list: 'feeds', id: f.id, added: true });
+      }).catch(function (err) { problem.textContent = err.message; problem.hidden = false; });
+    });
+    return form;
+  }
+
+  // The watch list: watched cycles by the month they open, and records with a watch date
+  function openingText(w, today) {
+    if (!derive.isYes(w.repeatsYearly) && w.lastReviewed) return 'Reviewed ' + niceDate(w.lastReviewed);
+    var n = W.nextOpening(w, today);
+    if (!n) return 'Opening month not set';
+    if (n.year === today.getFullYear() && n.month === today.getMonth() + 1) return 'Opens this month';
+    return 'Opens in ' + W.MONTHS[n.month - 1];
+  }
+
+  function watchList(today, recsAll) {
+    var watch = store.items('watch');
+    var linked = {}; watch.forEach(function (w) { if (w.record) linked[w.record] = true; });
+    var rowsOut = watch.map(function (w) {
+      var n = W.nextOpening(w, today);
+      return { sort: n ? n.year + '-' + (n.month < 10 ? '0' : '') + n.month : '9999', watch: w };
+    }).concat(recsAll.filter(function (r) { return r.watchDate && !linked[r.id]; }).map(function (r) {
+      return { sort: String(r.watchDate).slice(0, 7), record: r };
+    })).sort(function (a, b) { return a.sort.localeCompare(b.sort) || String((a.watch || a.record).name).localeCompare(String((b.watch || b.record).name)); });
+    if (!rowsOut.length) return el('p', { class: 'quiet empty', text: '·' });
+    var all = !!state.expanded.watchList;
+    var ul = el('ul', { class: 'todos watchList' });
+    rowsOut.slice(0, all ? 99 : 6).forEach(function (x) {
+      var w = x.watch, r = x.record;
+      var meta = w ? [openingText(w, today), w.kind, w.record && store.get('records', w.record) ? store.get('records', w.record).name : ''] : [label('watchDate') + ' ' + niceDate(r.watchDate), r.watchNote];
+      ul.appendChild(el('li', { class: 'todo' }, [el('button', {
+        type: 'button', class: 'todoMain', 'data-watch': w ? w.id : null, 'data-id': r ? r.id : null,
+        onclick: function () { if (w) openWatch(w.id); else openDetail(r.id); }
+      }, [el('span', { class: 'rowName', text: w ? w.name : r.name }), el('span', { class: 'rowMeta', text: meta.filter(Boolean).join(' · ') })])]));
+    });
+    return el('div', { class: 'watchBox' }, [ul,
+      rowsOut.length > 6 && !all ? more('Show all', function () { state.expanded.watchList = true; render(); }) : null]);
+  }
+
+  function addWatchForm() {
+    var name = el('input', { id: 'newWatchName', autocomplete: 'off' });
+    var month = el('select', { id: 'newWatchMonth' }, [el('option', { value: '', text: '' })]);
+    W.MONTHS.forEach(function (m, i) { month.appendChild(el('option', { value: String(i + 1), text: m })); });
+    var form = el('form', { class: 'addFeed' }, [
+      el('div', { class: 'field' }, [el('label', { for: 'newWatchName', text: 'Watch for' }), name]),
+      el('div', { class: 'field' }, [el('label', { for: 'newWatchMonth', text: 'Opens in' }), month]),
+      el('button', { type: 'submit', class: 'quietBtn', id: 'addWatch' }, ['Add to the list'])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nm = name.value.trim();
+      if (!nm) { name.focus(); return; }
+      store.add('watch', { name: nm, kind: 'Cycle', opens: month.value, repeatsYearly: true }).then(function (w) {
+        closeOpener('addingWatch', 'openAddWatch');
+        toast('Added to the watch list.', { list: 'watch', id: w.id, added: true });
+      }).catch(function (err) { console.error(err); toast('That did not save.'); });
+    });
+    return form;
+  }
+
+  // One watched item: every field (editors), the record it led to, and Remove
+  function openWatch(id, focusSel) {
+    var w = store.get('watch', id);
+    if (!w) { closeDetail(); return; }
+    refreshLabels();
+    state.openWatchId = id; state.openId = null; state.openTaskId = null; state.openFeedId = null;
+    var editor = isEditor();
+    var rec = w.record ? store.get('records', w.record) : null;
+    var body = el('div', { class: 'detailBody', 'data-watch-view': id }, [
+      el('header', { class: 'detailHead' }, [
+        el('div', {}, [el('h2', { id: 'detailName', text: w.name || 'Watch' }), el('p', { class: 'detailStatus quiet', id: 'watchWhen', text: openingText(w, new Date()) })]),
+        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+      ]),
+      el('p', { class: 'problem', hidden: true }),
+      rec ? el('p', { class: 'taskRecord' }, [el('button', { type: 'button', class: 'link', id: 'watchRecord', text: '← ' + rec.name, onclick: function () { openDetail(rec.id); } })]) : null,
+      el('div', { class: 'fields' }, [
+        field(w, 'name', { list: 'watch', wide: true }), field(w, 'kind', { list: 'watch' }), field(w, 'opens', { list: 'watch' }),
+        field(w, 'repeatsYearly', { list: 'watch' }), field(w, 'link', { list: 'watch', wide: true }), field(w, 'record', { list: 'watch', wide: true }),
+        field(w, 'notes', { list: 'watch', wide: true })
+      ].filter(Boolean)),
+      editor ? el('div', { class: 'detailActions' }, [
+        el('button', { type: 'button', class: 'quietBtn', id: 'removeWatch', onclick: function () { removeWatch(w); } }, ['Take off the list'])
+      ]) : null
+    ]);
+    mount(body, focusSel);
+  }
+
+  // One feed's details, so a name, keywords or link can be changed
+  function openFeed(id, focusSel) {
+    var f = store.get('feeds', id);
+    if (!f) { closeDetail(); return; }
+    state.openFeedId = id; state.openId = null; state.openTaskId = null; state.openWatchId = null;
+    mount(el('div', { class: 'detailBody', 'data-feed-view': id }, [
+      el('header', { class: 'detailHead' }, [
+        el('div', {}, [el('h2', { id: 'detailName', text: f.name || 'Feed' })]),
+        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+      ]),
+      el('p', { class: 'problem', hidden: true }),
+      el('div', { class: 'fields' }, [field(f, 'name', { list: 'feeds', wide: true }), field(f, 'type', { list: 'feeds' }), field(f, 'on', { list: 'feeds' }),
+        field(f, 'source', { list: 'feeds', wide: true, label: f.type === 'Grants.gov' ? 'Keywords (separated by ;)' : 'Link' })].filter(Boolean))
+    ]), focusSel || '#f-name');
+  }
+
+  function refreshWatch(w, key) {
+    var h = dialog.querySelector('#detailName'); if (h) h.textContent = w.name || 'Watch';
+    var when = dialog.querySelector('#watchWhen'); if (when) when.textContent = openingText(w, new Date());
+    if (key === 'record') openWatch(w.id, '#f-record'); // the link to the record comes and goes
+  }
+
+  function removeWatch(w) {
+    // created stays, so a cycle that has already opened still comes up after Undo
+    var keep = {}; Object.keys(w).forEach(function (k) { if (k !== 'id' && k !== 'modified') keep[k] = w[k]; });
+    store.remove('watch', w.id).then(function () {
+      closeDetail();
+      toast((w.name || 'It') + ' is off the watch list.', { list: 'watch', readd: keep });
+    }).catch(showProblem);
   }
 
   // ---------- render ----------
@@ -805,19 +1139,23 @@
 
   // ---------- the detail view ----------
 
-  function closeDetail() { state.openId = null; state.openTaskId = null; if (dialog.open) dialog.close(); }
+  function closeDetail() { state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null; if (dialog.open) dialog.close(); }
   dialog.addEventListener('close', function () {
-    var was = state.openId, wasTask = state.openTaskId;
-    state.openId = null; state.openTaskId = null;
+    var was = state.openId, wasTask = state.openTaskId, wasWatch = state.openWatchId, wasFeed = state.openFeedId;
+    state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
     if ($('toast').parentNode === dialog) document.body.appendChild($('toast'));
     draw();
     // Back on the row that was opened, so the keyboard picks up where it left off
-    var back = (was != null && document.querySelector('[data-id="' + was + '"]')) || (wasTask != null && document.querySelector('[data-task="' + wasTask + '"]'));
+    var after = state.afterClose; state.afterClose = null;
+    var back = (after && document.querySelector(after)) || (was != null && document.querySelector('[data-id="' + was + '"]')) || (wasTask != null && document.querySelector('[data-task="' + wasTask + '"]')) ||
+      (wasWatch != null && document.querySelector('[data-watch="' + wasWatch + '"]')) || (wasFeed != null && document.querySelector('[data-feed-edit="' + wasFeed + '"]'));
     if (back) back.focus();
   });
   // After Undo: the same view again, with focus where the person was (or on Close)
   function reopen(focusSel) {
     if (state.openTaskId) openTask(state.openTaskId, focusSel || '.close');
+    else if (state.openWatchId) openWatch(state.openWatchId, focusSel || '.close');
+    else if (state.openFeedId) openFeed(state.openFeedId, focusSel || '.close');
     else if (state.openId) { openDetail(state.openId); var f = dialog.querySelector(focusSel || '.close'); if (f) f.focus(); }
   }
   dialog.addEventListener('click', function (e) { if (e.target === dialog) closeDetail(); });
@@ -838,8 +1176,12 @@
   // A value as a viewer reads it; empty ones are left out so the record reads short
   function readOnlyField(col, key, value, name, wide) {
     if (value === '' || value === undefined || value === null) return null;
+    var linked = col.type === 'lookup' ? store.get(col.list || 'records', Number(value)) : null;
     var text = col.type === 'currency' ? money(value) : col.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? niceDate(value)
-      : col.type === 'yesno' ? (derive.isYes(value) ? 'Yes' : 'No') : key === 'status' ? statusName(value) : String(value);
+      : col.type === 'yesno' ? (derive.isYes(value) ? 'Yes' : 'No') : key === 'status' ? statusName(value)
+      : col.type === 'month' ? (W.MONTHS[Number(value) - 1] || String(value))
+      : col.type === 'lookup' ? (linked ? linked.name || linked.title || '' : '') : String(value);
+    if (text === '') return null;
     return el('div', { class: 'field readonly' + (wide ? ' wide' : '') }, [el('span', { class: 'fieldLabel', text: name }), el('p', { class: 'value', id: 'f-' + key, text: text })]);
   }
 
@@ -858,6 +1200,16 @@
       var fits = value === '' || typeof value === 'boolean' || /^(yes|no|true|false)$/i.test(String(value));
       if (!fits) input.appendChild(el('option', { value: '__as-is', text: String(value) })); // kept as it is until changed
       input.value = value === '' ? '' : !fits ? '__as-is' : derive.isYes(value) ? 'Yes' : 'No';
+    } else if (col.type === 'month') {
+      input = el('select', { id: id }, [el('option', { value: '', text: '' })]);
+      W.MONTHS.forEach(function (m, i) { input.appendChild(el('option', { value: String(i + 1), text: m })); });
+      input.value = W.MONTHS[Number(value) - 1] ? String(Number(value)) : '';
+    } else if (col.type === 'lookup') {
+      input = el('select', { id: id }, [el('option', { value: '', text: '' })]);
+      store.items(col.list || 'records').filter(function (x) { return x.status !== 'Archived' || x.id === Number(value); }).sort(byName).forEach(function (x) {
+        input.appendChild(el('option', { value: String(x.id), text: x.name }));
+      });
+      input.value = value === '' ? '' : String(value);
     } else if (col.type === 'note') {
       input = el('textarea', { id: id, rows: key === 'links' ? 3 : 2 });
       input.value = value;
@@ -881,6 +1233,7 @@
     input.addEventListener('change', function () {
       var v = input.value;
       if (col.type === 'yesno') { if (v === '__as-is') return; v = v === '' ? '' : v === 'Yes'; }
+      if (col.type === 'lookup') v = v === '' ? '' : Number(v);
       if (col.type === 'currency' || col.type === 'number') {
         var cleaned = v.replace(/[$,\s]/g, '');
         if (cleaned !== '' && !/^\d+(\.\d+)?$/.test(cleaned)) {
@@ -901,6 +1254,8 @@
         Object.keys(r).forEach(function (k) { delete r[k]; });
         Object.assign(r, item);
         if (list === 'tasks') { if (dialog.open && state.openTaskId === r.id) refreshTask(r, key); return; }
+        if (list === 'watch') { if (dialog.open && state.openWatchId === r.id) refreshWatch(r, key); return; }
+        if (list === 'feeds') { if (dialog.open && state.openFeedId === r.id) { if (key === 'type') openFeed(r.id, '#f-type'); else dialog.querySelector('#detailName').textContent = r.name || 'Feed'; } return; }
         if (!dialog.open || state.openId !== r.id) return;
         if (key === 'status') openDetail(r.id, 'status'); // the Archive reason field comes and goes
         else { refreshHead(r); if (col.type === 'currency') input.value = shownValue(r[key]); }
@@ -940,7 +1295,7 @@
     var r = store.get('records', id);
     if (!r) { closeDetail(); return; }
     refreshLabels();
-    state.openId = id; state.openTaskId = null;
+    state.openId = id; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
     var editor = isEditor();
     var today = new Date();
     var shownStatus = derive.shown(r, today);
@@ -987,6 +1342,9 @@
         return field(r, c.key, { label: c.label, type: c.type, choices: c.type === 'choice' ? c.choices : null, wide: c.type === 'note' });
       })), !!(r.watchDate || r.watchNote || custom.some(function (c) { return r[c.key] !== undefined && r[c.key] !== ''; }))),
       editor ? el('div', { class: 'detailActions' }, [
+        r.watchDate ? null : el('button', { type: 'button', class: 'quietBtn', id: 'addToWatch', onclick: function () {
+          openSections.more = true; openDetail(r.id, 'watchDate');
+        } }, ['Add to ' + tileName('watch')]),
         archived
           ? el('button', { type: 'button', class: 'primary', onclick: function () { restoreRecord(r); } }, ['Restore'])
           : el('button', { type: 'button', class: 'quietBtn', onclick: function () { archiveRecord(r); } }, ['Archive'])
@@ -1023,7 +1381,7 @@
     var t = store.get('tasks', id);
     if (!t) { closeDetail(); return; }
     refreshLabels();
-    state.openTaskId = id; state.openId = null;
+    state.openTaskId = id; state.openId = null; state.openWatchId = null; state.openFeedId = null;
     var rec = t.record ? store.get('records', t.record) : null;
     var editor = isEditor();
     var body = el('div', { class: 'detailBody', 'data-task-view': id }, [
@@ -1404,5 +1762,5 @@
   });
 
   // For the browser tests
-  window.NAMI.app = { store: store, rawStore: rawStore, render: render, openDetail: openDetail, openTask: openTask, state: state, auth: auth };
+  window.NAMI.app = { store: store, rawStore: rawStore, render: render, openDetail: openDetail, openTask: openTask, openWatch: openWatch, state: state, auth: auth };
 })();

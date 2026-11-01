@@ -2,16 +2,17 @@
 
 A one-page grants and county-contract dashboard for NAMI Southeast Wisconsin, built over NAMI's own SharePoint lists. It replaces the ChatGPT Grant Dashboard and Grant Radar once it launches; both keep running until then.
 
-**Stage:** Phase 5 of 7 done (sign-in, editors and viewers, program views, task steps and comments). Phase 1 built the data layer and sample, Phase 2 the records, detail view and archive, Phase 3 the home tiles, To-do, Awards toggle and filters, Phase 4 labels, your own fields and the tile layout.
+**Stage:** Phase 6 of 7 done (Funding Watch: Grants.gov and feed results, the watch list, Review items in To-do). Phase 1 built the data layer and sample, Phase 2 the records, detail view and archive, Phase 3 the home tiles, To-do, Awards toggle and filters, Phase 4 labels, your own fields and the tile layout, Phase 5 sign-in, editors and viewers, program views, task steps and comments.
 
 ## See it
 
 Open `index.html` in a browser, straight from the folder; no server and no install. All records are fictional and kept only in this browser.
 
-- The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts and Archive. Each tile's title opens and closes it; its handle moves it (press and hold, or arrow keys).
+- The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; its handle moves it (press and hold, or arrow keys).
 - **Filters** narrow every tile. **Search** finds any record.
 - **Add** asks only for a name. Click a record to see every field; each saves when you leave it, with **Undo**.
 - Click a task to check off its steps and add comments.
+- **Funding Watch** shows Grants.gov results (sample ones when opened from a folder) with **Add as Potentials**, your own feeds, and the watch list of funding cycles. When a cycle's month or a record's watch date arrives, a Review item shows in To-do.
 - **Signed in as** (top right) switches between the sample people: Morgan, Dana and Lee are editors; Sam and Pat are viewers of two programs each.
 - **Labels and fields** (footer, editors) renames anything and adds your own fields. **All lists** shows every list as stored. **Start the sample over** brings back the original sample.
 
@@ -25,6 +26,10 @@ Sample mode needs no sign-in. To sign in with NAMI's Microsoft 365 accounts, one
 4. Copy the Application (client) ID and the Directory (tenant) ID into `js/config.js`, put the same redirect address in `redirectUri`, and set `mode: 'microsoft'`.
 
 Until SharePoint mode arrives in Phase 7 the records stay Sample data, so this can be tried safely. Who is an editor comes from the People list, matched by email.
+
+## Funding Watch feeds
+
+Browsers cannot ask Grants.gov or most feeds directly, so on Netlify a small function, `netlify/functions/feeds.mjs`, fetches them for the page (`netlify.toml` tells Netlify where it is). It reads Grants.gov's public search API and RSS or Atom feeds only, keeps nothing, and refuses private addresses. Opened from a folder there is no function, so Grants.gov shows fictional sample results and other feeds read "Not loading right now". To use a function somewhere else, put its address in `js/config.js`, `feeds.endpoint`.
 
 ## Check it
 
@@ -41,6 +46,8 @@ Until SharePoint mode arrives in Phase 7 the records stay Sample data, so this c
 - `js/settings.js`: labels, your own fields and the tile layout (plain logic, tested in Node)
 - `js/access.js`: who is signed in, editor or viewer, program views, task steps; guards every change
 - `js/auth.js`, `js/config.js`: Sample sign-in, and Microsoft sign-in once `config.js` is filled in
+- `js/watch.js`: Funding Watch logic: Grants.gov results, RSS and Atom, safe links, when a Review is due (shared with the function)
+- `netlify/functions/feeds.mjs`, `netlify.toml`: the feed function on Netlify
 - `lists.html`, `js/check.js`: every list as stored, for checking
 
 - What to build: [`SPEC.md`](SPEC.md)
