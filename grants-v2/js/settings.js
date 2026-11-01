@@ -45,6 +45,7 @@
     { key: 'notes', text: 'Notes and links' },
     { key: 'tasks', text: 'Tasks' },
     { key: 'awardYears', text: 'Award years' },
+    { key: 'taskDetails', text: 'Task details' },
     { key: 'more', text: 'More details' }
   ];
 

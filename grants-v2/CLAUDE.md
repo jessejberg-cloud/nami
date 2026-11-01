@@ -33,4 +33,4 @@ These rules apply inside `grants-v2/`. The repository's own `CLAUDE.md` and `STA
 - `SPEC.md`: what to build
 - `docs/adhd-design-guide.md`: the design law for every screen
 - `reference/`: the September handoff (sample data and old-version reference only; its Grant Radar and Volunteers & Events material is out of scope)
-- The Nov 1 v2 plan (the source of SPEC.md) is kept out of this public repository; it is in `source\` in Jesse's working copy: `C:\Users\jesse\OneDrive\Office Space\08 Miscellaneous\NAMI Grant Dashboard`
+- The Nov 1 v2 plan (the source of SPEC.md) is kept out of this public repository; it is in `source\` in Jesse's working copy: `C:\Users\jesse\OneDrive\Office Space\08 Miscellaneous\NAMI\Grant Dashbaord`

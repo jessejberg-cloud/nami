@@ -205,3 +205,29 @@ body.moving { user-select: none; -webkit-user-select: none; cursor: grabbing; }
 }
 @media (max-width: 600px) { .pair { grid-template-columns: minmax(0, 1fr); } }
 .foot > span { display: inline-flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ---------- Phase 5: who is signed in, read-only records, tasks ---------- */
+.who { display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.who select { width: auto; max-width: 100%; font-size: .9rem; padding: 4px 8px; }
+.field.readonly .fieldLabel { font-size: .8rem; color: var(--quiet); }
+.field.readonly .value { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.taskRecord { margin: 0; }
+.taskPart { display: grid; gap: 8px; }
+.taskPart h3 { margin: 0; font-size: 1rem; }
+.taskPart > .quiet { margin: 0; font-size: .85rem; }
+.steps, .comments { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.steps li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.steps label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.steps input { width: 20px; height: 20px; accent-color: var(--s-Active); }
+.steps input:disabled + * , .steps input:disabled { cursor: default; }
+.who.quiet, .steps .who, .comments .who { font-size: .8rem; }
+.comments li { border-left: 3px solid var(--line); padding-left: 10px; }
+.comments p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.commentForm { display: grid; gap: 8px; justify-items: start; }
+.commentForm textarea { width: 100%; }
+.plainList .link { text-align: left; padding: 0; }
+.signIn { display: grid; gap: 14px; justify-items: start; padding: 24px; }
+.signIn h2 { margin: 0; }
+.steps.readOnly li { gap: 4px 10px; }
+.steps .mark { width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--s-Active); flex: none; }
+.steps .done .mark { border-color: var(--s-Active); }

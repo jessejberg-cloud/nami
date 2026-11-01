@@ -1,6 +1,9 @@
 /*
   NAMI Grants Dashboard v2: the page.
 
+  Phase 5: sign-in (Sample "Signed in as", or Microsoft through js/auth.js), Editor and Viewer roles
+  from the People list (js/access.js guards every change), program views for viewers, and a task
+  view where steps are checked off and comments added (the Progress list).
   Phase 4: every title, status, field, section and filter name comes from the Labels list (T);
   custom fields from Settings show under More details and get a filter; tiles collapse, move by
   press and hold (or arrow keys on their handle), and the layout is kept per person.
@@ -15,11 +18,16 @@
 
   var N = window.NAMI;
   var schema = N.schema, derive = N.derive, S = N.settings;
-  var store = N.data.createSampleStore({ storage: window.localStorage });
-  var ME = 'Morgan Reyes (sample)'; // who is "me" in Sample mode; sign-in replaces this in Phase 5
+  var A = N.access;
+  var rawStore = N.data.createSampleStore({ storage: window.localStorage });
+  // Every change passes the signed-in person's role; a viewer can only log progress on their tasks
+  var store = A.guard(rawStore, function () { return state.who; });
+  var auth = N.auth.createAuth(window.NAMI_CONFIG, { storage: window.localStorage, people: function () { return rawStore.items('people'); } });
+  function me() { return state.who ? state.who.person : ''; }
+  function isEditor() { return A.can(state.who, 'edit'); }
 
   var ORDER = ['Potentials', 'Upcoming', 'Applied', 'Active', 'Awarded'];
-  var state = { view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, undo: null, toastAction: null };
+  var state = { view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, openTaskId: null, undo: null, toastAction: null, who: null, myPrograms: false };
   // Choices a person makes on the page (Award year or Spread, My to-do) are kept per browser
   var CHOICE_KEY = 'nami-grants-v2-choices';
   try { var kept = JSON.parse(window.localStorage.getItem(CHOICE_KEY)) || {}; state.myTodo = !!kept.myTodo; state.awardView = kept.awardView || ''; } catch (e) { /* fine without */ }
@@ -154,11 +162,11 @@
     state.undo = null; $('toast').hidden = true;
     var list = u.list || 'records';
     var p = u.added ? store.remove(list, u.id) : store.restore(list, u.before);
-    p.then(function () {
-      if (u.added && list === 'records' && state.openId === u.id) closeDetail();
-      render(); if (state.openId) openDetail(state.openId);
+    p.catch(function (e) { console.error(e); toast('That could not be put back.'); return Promise.reject(null); }).then(function () {
+      if (u.added && ((list === 'records' && state.openId === u.id) || (list === 'tasks' && state.openTaskId === u.id))) closeDetail();
+      render(); reopen(u.focus);
       toast('Put back.');
-    });
+    }).catch(function () { /* already said */ });
   });
 
   // ---------- filters ----------
@@ -263,7 +271,17 @@
     box.innerHTML = '';
     var keys = Object.keys(liveFilters());
     $('filtersBtn').textContent = 'Filters';
-    box.hidden = !keys.length;
+    var narrow = state.who && !state.who.all;
+    box.hidden = !keys.length && !narrow;
+    // Viewers see their own programs first; for focus, not privacy, so one tap shows everything
+    if (narrow && state.myPrograms) {
+      box.appendChild(el('button', { type: 'button', class: 'fchip', id: 'programsChip', 'aria-label': 'Show every program', onclick: function () {
+        state.myPrograms = false; render();
+        toast('Showing every program.', null, { label: 'Undo', run: function () { state.myPrograms = true; render(); } });
+      } }, [label('program') + ': ' + state.who.programs.join(', '), el('span', { class: 'x', 'aria-hidden': 'true', text: '×' })]));
+    } else if (narrow) {
+      box.appendChild(el('button', { type: 'button', class: 'link', id: 'programsChip', text: 'Only my programs', onclick: function () { state.myPrograms = true; render(); } }));
+    }
     keys.forEach(function (k) {
       var v = state.filters[k];
       box.appendChild(el('button', { type: 'button', class: 'fchip', 'aria-label': 'Remove filter ' + filterLabel(k), onclick: function () {
@@ -287,9 +305,13 @@
     if (!p.hidden) buildFilterPanel();
   });
 
-  function filtered(today, f) {
+  // allPrograms: leave out the viewer's program view (for their own work, and for searches)
+  function filtered(today, f, allPrograms) {
     f = f || liveFilters();
-    return store.items('records').filter(function (r) { return derive.passes(r, f, today) && matches(r, state.query); });
+    var narrow = state.myPrograms && !allPrograms && !state.query; // a search looks everywhere
+    return store.items('records').filter(function (r) {
+      return derive.passes(r, f, today) && matches(r, state.query) && (!narrow || A.inPrograms(state.who, r));
+    });
   }
   // Every filter but the time period: the Awards tile shows several years side by side
   function filteredAnyYear(today) {
@@ -409,14 +431,15 @@
 
   // ---------- layout: order and collapsed tiles, kept per person in this browser ----------
 
-  var LAYOUT_KEY = 'nami-grants-v2-layout:' + ME;
-  state.layout = (function () {
-    try { return S.normalLayout(JSON.parse(window.localStorage.getItem(LAYOUT_KEY))); } catch (e) { return S.normalLayout(null); }
-  })();
+  function layoutKey() { return 'nami-grants-v2-layout:' + me(); }
+  state.layout = S.normalLayout(null);
+  function loadLayout() {
+    try { state.layout = S.normalLayout(JSON.parse(window.localStorage.getItem(layoutKey()))); } catch (e) { state.layout = S.normalLayout(null); }
+  }
   function setLayout(next, note) {
     var before = state.layout;
     state.layout = S.normalLayout(next);
-    try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(state.layout)); } catch (e) { /* fine without */ }
+    try { window.localStorage.setItem(layoutKey(), JSON.stringify(state.layout)); } catch (e) { /* fine without */ }
     render();
     if (note) toast(note, null, { label: 'Undo', run: function () { setLayout(before); } });
   }
@@ -504,26 +527,26 @@
 
   function taskRecordPasses(t, ids) { return !t.record || ids[t.record]; }
 
-  function stepsDone(t) {
-    var done = {};
-    store.items('progress').forEach(function (p) { if (p.task === t.id && p.done) done[p.step] = true; });
-    return Object.keys(done).length;
-  }
+  function stepsDone(t) { return A.stepState(t, store.items('progress')).done; }
 
   // Everything with a date that needs doing: tasks, apply-by dates, ended awards.
-  function todoItems(today, recs, mineOnly) {
+  // recsAll: the same records without the program view, so a person's own tasks and records always show
+  function todoItems(today, recs, mineOnly, recsAll) {
     var ids = {}; recs.forEach(function (r) { ids[r.id] = r; });
+    var idsAll = {}; (recsAll || recs).forEach(function (r) { idsAll[r.id] = r; });
+    if (mineOnly) { recs = recsAll || recs; ids = idsAll; }
     var t = derive.iso(today), soon = derive.iso(derive.addDays(today, dueDays()));
     var items = [];
     store.items('tasks').forEach(function (task) {
-      if (task.done || !taskRecordPasses(task, ids)) return;
-      if (mineOnly && task.assignedTo !== ME) return;
+      if (task.done) return;
+      if (!taskRecordPasses(task, ids) && !(task.assignedTo === me() && taskRecordPasses(task, idsAll))) return;
+      if (mineOnly && task.assignedTo !== me()) return;
       var rec = task.record ? store.get('records', task.record) : null;
       items.push({ kind: 'task', date: task.dueDate || '', title: task.title, task: task, record: rec,
         note: !task.dueDate ? '' : task.dueDate < t ? 'Past due date' : task.dueDate <= soon ? 'Due soon' : '' });
     });
     recs.forEach(function (r) {
-      if (mineOnly && r.owner !== ME) return;
+      if (mineOnly && r.owner !== me()) return;
       if ((r.status === 'Upcoming' || r.status === 'Potentials') && r.deadline) {
         var note = r.deadline < t ? tagText({ key: 'applyPassed', text: 'Apply-by date passed' }) : r.deadline <= soon ? 'Due soon' : '';
         // Potentials only come up once their apply-by date is near, so To-do stays short
@@ -550,14 +573,14 @@
       var n = stepsDone(it.task);
       if (n) meta.push(n === 1 ? '1 step done' : n + ' steps done');
     }
-    var open = function () { if (it.record) openDetail(it.record.id); };
-    var main = el('button', { type: 'button', class: 'todoMain', 'data-id': it.record ? it.record.id : null, onclick: open, disabled: !it.record }, [
+    var open = function () { if (it.kind === 'task') openTask(it.task.id); else if (it.record) openDetail(it.record.id); };
+    var main = el('button', { type: 'button', class: 'todoMain', 'data-id': it.kind !== 'task' && it.record ? it.record.id : null, 'data-task': it.kind === 'task' ? it.task.id : null, onclick: open }, [
       el('span', { class: 'rowName', text: it.title }),
       el('span', { class: 'rowMeta', text: meta.join(' · ') }),
       it.note ? tagEl({ text: it.note, tone: 'attention' }) : null
     ]);
     var kids = [];
-    if (it.kind === 'task') {
+    if (it.kind === 'task' && isEditor()) {
       kids.push(el('button', { type: 'button', class: 'check', 'aria-label': 'Mark done: ' + it.title, title: 'Mark done', onclick: function () { markDone(it.task); } }, [icon('check')]));
     }
     kids.push(main);
@@ -578,14 +601,15 @@
     var tiles = {};
 
     // Needs attention: anything past its date or due within the due-soon window, across everything
-    var attention = todoItems(today, recs, false).filter(function (it) { return it.note; });
+    var recsAll = state.myPrograms ? filtered(today, null, true) : recs;
+    var attention = todoItems(today, recs, false, recsAll).filter(function (it) { return it.note; });
     var attBody = attention.length ? el('ul', { class: 'todos' }) : el('p', { class: 'quiet empty', text: '·' });
     attention.slice(0, state.expanded.attention ? 99 : 6).forEach(function (it) { attBody.appendChild(todoRow(it)); });
     tiles.attention = (tile('attention', [attBody,
       attention.length > 6 && !state.expanded.attention ? more('Show all', function () { state.expanded.attention = true; render(); }) : null]));
 
     // To-do: what is coming up and not already in Needs attention; My to-do shows all of mine
-    var todos = todoItems(today, recs, state.myTodo).filter(function (it) { return state.myTodo || !it.note; });
+    var todos = todoItems(today, recs, state.myTodo, recsAll).filter(function (it) { return state.myTodo || !it.note; });
     var todoBody = todos.length ? el('ul', { class: 'todos' }) : el('p', { class: 'quiet empty', text: '·' });
     todos.slice(0, state.expanded.todo ? 99 : 6).forEach(function (it) { todoBody.appendChild(todoRow(it)); });
     var mine = el('label', { class: 'toggle' }, [el('input', { type: 'checkbox', id: 'myTodo' }), T('filter.myTodo', 'My to-do')]);
@@ -625,11 +649,11 @@
     // Archive: its own search
     var aq = el('input', { type: 'search', id: 'archiveSearch', placeholder: 'Search', autocomplete: 'off' });
     aq.value = state.archiveQuery || '';
-    var arch = recs.filter(function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }).sort(byName);
+    var arch = null;
     var archList = el('div', { id: 'archiveList' });
     function fillArchive() {
       archList.innerHTML = '';
-      var found = recs.filter(function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }).sort(byName);
+      var found = (state.archiveQuery ? recsAll : recs).filter(function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }).sort(byName);
       archList.appendChild(found.length ? rows(found.slice(0, 5), today) : el('p', { class: 'quiet empty', text: '·' }));
       if (found.length > 5) archList.appendChild(more('Show all', function () { showList(tileName('archive'), function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }, ['Archived']); }));
     }
@@ -735,6 +759,12 @@
     listEl.innerHTML = '';
     renderFilterChips();
     if (!$('filterPanel').hidden) buildFilterPanel(); // names and custom fields may have changed
+    var editor = isEditor();
+    if (!editor) { $('add').hidden = true; $('addForm').hidden = true; if (state.view === 'setup') state.view = 'home'; }
+    else if ($('addForm').hidden) $('add').hidden = false;
+    $('setupBtn').hidden = !editor;
+    $('reset').hidden = !editor;
+    renderWho();
     document.querySelector('label[for=addName]').textContent = label('name');
     document.querySelector('label[for=addType]').textContent = label('recordType');
     document.querySelector('h1').textContent = document.title = T('page.title', 'Grants Dashboard');
@@ -766,7 +796,7 @@
     e.preventDefault();
     var name = $('addName').value.trim();
     if (!name) { $('addName').focus(); return; }
-    store.add('records', { name: name, recordType: $('addType').value }, { me: ME }).then(function (r) {
+    store.add('records', { name: name, recordType: $('addType').value }, { me: me() }).then(function (r) {
       closeAdd(); render(); openDetail(r.id);
       toast('Added.', { list: 'records', id: r.id, added: true });
     });
@@ -775,22 +805,27 @@
 
   // ---------- the detail view ----------
 
-  function closeDetail() { state.openId = null; if (dialog.open) dialog.close(); }
+  function closeDetail() { state.openId = null; state.openTaskId = null; if (dialog.open) dialog.close(); }
   dialog.addEventListener('close', function () {
-    var was = state.openId;
-    state.openId = null;
+    var was = state.openId, wasTask = state.openTaskId;
+    state.openId = null; state.openTaskId = null;
     if ($('toast').parentNode === dialog) document.body.appendChild($('toast'));
     draw();
     // Back on the row that was opened, so the keyboard picks up where it left off
-    var back = was != null && document.querySelector('[data-id="' + was + '"]');
+    var back = (was != null && document.querySelector('[data-id="' + was + '"]')) || (wasTask != null && document.querySelector('[data-task="' + wasTask + '"]'));
     if (back) back.focus();
   });
+  // After Undo: the same view again, with focus where the person was (or on Close)
+  function reopen(focusSel) {
+    if (state.openTaskId) openTask(state.openTaskId, focusSel || '.close');
+    else if (state.openId) { openDetail(state.openId); var f = dialog.querySelector(focusSel || '.close'); if (f) f.focus(); }
+  }
   dialog.addEventListener('click', function (e) { if (e.target === dialog) closeDetail(); });
 
-  function save(id, changes, done, failed) {
-    store.update('records', id, changes).then(function (res) {
+  function save(list, id, changes, done, failed) {
+    store.update(list, id, changes).then(function (res) {
       render();
-      toast('Saved.', { list: 'records', before: res.before });
+      toast('Saved.', { list: list, before: res.before });
       if (done) done(res.item);
     }).catch(function (err) { showProblem(err); if (failed) failed(); });
   }
@@ -800,13 +835,23 @@
     if (msg) { msg.textContent = err.message; msg.hidden = false; }
   }
 
+  // A value as a viewer reads it; empty ones are left out so the record reads short
+  function readOnlyField(col, key, value, name, wide) {
+    if (value === '' || value === undefined || value === null) return null;
+    var text = col.type === 'currency' ? money(value) : col.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? niceDate(value)
+      : col.type === 'yesno' ? (derive.isYes(value) ? 'Yes' : 'No') : key === 'status' ? statusName(value) : String(value);
+    return el('div', { class: 'field readonly' + (wide ? ' wide' : '') }, [el('span', { class: 'fieldLabel', text: name }), el('p', { class: 'value', id: 'f-' + key, text: text })]);
+  }
+
   function field(r, key, opts) {
     opts = opts || {};
-    var col = schema.column('records', key) || { key: key, type: opts.type || 'text' };
-    var name = opts.label || label(key);
+    var list = opts.list || 'records';
+    var col = schema.column(list, key) || { key: key, type: opts.type || 'text' };
+    var name = opts.label || (list === 'records' ? label(key) : col.label);
     var id = 'f-' + key;
     var value = r[key] === undefined || r[key] === null ? '' : r[key];
     var input;
+    if (!isEditor()) return readOnlyField(col, key, value, name, opts.wide);
 
     if (col.type === 'yesno') {
       input = el('select', { id: id }, [el('option', { value: '', text: '' }), el('option', { value: 'Yes', text: 'Yes' }), el('option', { value: 'No', text: 'No' })]);
@@ -852,9 +897,10 @@
         if (v === 'Archived') changes.previousStatus = r.status;
         else changes.archiveReason = '';
       }
-      save(r.id, changes, function (item) {
+      save(list, r.id, changes, function (item) {
         Object.keys(r).forEach(function (k) { delete r[k]; });
         Object.assign(r, item);
+        if (list === 'tasks') { if (dialog.open && state.openTaskId === r.id) refreshTask(r, key); return; }
         if (!dialog.open || state.openId !== r.id) return;
         if (key === 'status') openDetail(r.id, 'status'); // the Archive reason field comes and goes
         else { refreshHead(r); if (col.type === 'currency') input.value = shownValue(r[key]); }
@@ -894,7 +940,8 @@
     var r = store.get('records', id);
     if (!r) { closeDetail(); return; }
     refreshLabels();
-    state.openId = id;
+    state.openId = id; state.openTaskId = null;
+    var editor = isEditor();
     var today = new Date();
     var shownStatus = derive.shown(r, today);
     var archived = r.status === 'Archived';
@@ -934,30 +981,162 @@
       ]),
       section('contact', [field(r, 'contactName'), field(r, 'contactEmail'), field(r, 'contactPhone')], !!(r.contactName || r.contactEmail || r.contactPhone)),
       section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)], !!(r.comments || r.links || r.folderLink)),
-      tasks.length ? section('tasks', [taskList(tasks)], true) : null,
+      tasks.length || editor ? section('tasks', [taskList(tasks), editor ? addTaskForm(r) : null], true) : null,
       years.length ? section('awardYears', [yearList(years)], true) : null,
       section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(custom.map(function (c) {
         return field(r, c.key, { label: c.label, type: c.type, choices: c.type === 'choice' ? c.choices : null, wide: c.type === 'note' });
       })), !!(r.watchDate || r.watchNote || custom.some(function (c) { return r[c.key] !== undefined && r[c.key] !== ''; }))),
-      el('div', { class: 'detailActions' }, [
+      editor ? el('div', { class: 'detailActions' }, [
         archived
           ? el('button', { type: 'button', class: 'primary', onclick: function () { restoreRecord(r); } }, ['Restore'])
           : el('button', { type: 'button', class: 'quietBtn', onclick: function () { archiveRecord(r); } }, ['Archive'])
-      ])
+      ]) : null
     ]);
+    mount(body, focusKey && '#f-' + focusKey);
+  }
 
+  function mount(body, focusSel) {
     var keepToast = $('toast');
     dialog.innerHTML = '';
     dialog.appendChild(body);
     dialog.appendChild(keepToast);
     dialog.appendChild(peopleDatalist());
     if (!dialog.open) dialog.showModal();
-    var f = focusKey && dialog.querySelector('#f-' + focusKey);
+    var f = focusSel && dialog.querySelector(focusSel);
     if (f) f.focus();
+  }
+
+  // ---------- a task: its steps, comments and (for editors) its details ----------
+
+  function taskStatus(t) {
+    var today = derive.iso(new Date()), soon = derive.iso(derive.addDays(new Date(), dueDays()));
+    var out = [];
+    if (t.done) out.push(el('span', { class: 'chip s-Active' }, [icon('check'), 'Done']));
+    else if (t.dueDate && t.dueDate < today) out.push(tagEl({ text: 'Past due date', tone: 'attention' }));
+    else if (t.dueDate && t.dueDate <= soon) out.push(tagEl({ text: 'Due soon', tone: 'attention' }));
+    var meta = [t.type, t.dueDate ? 'Due ' + niceDate(t.dueDate) : '', t.assignedTo].filter(Boolean).join(' · ');
+    if (meta) out.push(el('span', { class: 'quiet', text: meta }));
+    return out;
+  }
+
+  function openTask(id, focusSel) {
+    var t = store.get('tasks', id);
+    if (!t) { closeDetail(); return; }
+    refreshLabels();
+    state.openTaskId = id; state.openId = null;
+    var rec = t.record ? store.get('records', t.record) : null;
+    var editor = isEditor();
+    var body = el('div', { class: 'detailBody', 'data-task-view': id }, [
+      el('header', { class: 'detailHead' }, [
+        el('div', {}, [el('h2', { id: 'detailName', text: t.title || 'Task' }), el('p', { class: 'detailStatus', id: 'taskStatus' }, taskStatus(t))]),
+        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+      ]),
+      el('p', { class: 'problem', hidden: true }),
+      rec ? el('p', { class: 'taskRecord' }, [el('button', { type: 'button', class: 'link', id: 'taskRecord', text: '← ' + rec.name, onclick: function () { openDetail(rec.id); } })]) : null,
+      stepsBlock(t),
+      commentsBlock(t),
+      editor ? section('taskDetails', [field(t, 'title', { list: 'tasks', wide: true }), field(t, 'type', { list: 'tasks' }), field(t, 'dueDate', { list: 'tasks' }),
+        field(t, 'assignedTo', { list: 'tasks' }), field(t, 'steps', { list: 'tasks', wide: true })], !!focusSel) : null,
+      editor ? el('div', { class: 'detailActions' }, [
+        el('button', { type: 'button', id: 'taskDone', class: t.done ? 'quietBtn' : 'primary', onclick: function () { setTaskDone(t, !t.done); } }, [t.done ? 'Not done yet' : 'Mark done'])
+      ]) : null
+    ]);
+    mount(body, focusSel);
+  }
+
+  // After a task field saves: the heading, and the steps when they changed, without touching the fields
+  function refreshTask(t, key) {
+    var h = dialog.querySelector('#detailName'); if (h) h.textContent = t.title || 'Task';
+    var st = dialog.querySelector('#taskStatus'); if (st) { st.innerHTML = ''; taskStatus(t).forEach(function (n) { st.appendChild(n); }); }
+    if (key === 'steps' || key === 'assignedTo') { var old = dialog.querySelector('#taskSteps'); var fresh = stepsBlock(t); if (old && fresh) old.replaceWith(fresh); else if (old) old.remove(); else if (fresh) dialog.querySelector('.taskRecord, .problem').after(fresh); }
+  }
+
+  function stepsBlock(t) {
+    var state_ = A.stepState(t, store.items('progress'));
+    if (!state_.steps.length) return null;
+    var canLog = A.can(state.who, 'log', t);
+    var ul = el('ul', { class: 'steps' + (canLog ? '' : ' readOnly') });
+    state_.steps.forEach(function (step, i) {
+      var who = step.done ? el('span', { class: 'quiet who', text: [step.by, niceDate(step.date)].filter(Boolean).join(' · ') }) : null;
+      if (!canLog) { // nothing to press: a plain list, with a check beside what is done
+        ul.appendChild(el('li', { class: step.done ? 'done' : '' }, [el('span', { class: 'mark' }, [step.done ? icon('check') : null]), el('span', { text: step.text }), who]));
+        return;
+      }
+      var box = el('input', { type: 'checkbox', id: 'step-' + i });
+      box.checked = step.done;
+      box.addEventListener('change', function () { logStep(t, step.text, box.checked, '#step-' + i); });
+      ul.appendChild(el('li', {}, [el('label', { for: 'step-' + i }, [box, ' ' + step.text]), who]));
+    });
+    return el('section', { class: 'taskPart', id: 'taskSteps' }, [
+      el('h3', { text: 'Steps' }),
+      state_.done ? el('p', { class: 'quiet', text: state_.done === 1 ? '1 step done' : state_.done + ' steps done' }) : null,
+      ul
+    ]);
+  }
+
+  function logStep(t, step, done, focusSel) {
+    store.add('progress', { task: t.id, step: step, done: done, comment: '', date: derive.iso(new Date()) }).then(function (item) {
+      render();
+      openTask(t.id, focusSel);
+      toast(done ? 'Step checked.' : 'Step unchecked.', { list: 'progress', id: item.id, added: true, focus: focusSel });
+    }).catch(function (e) { openTask(t.id, focusSel); showProblem(e); });
+  }
+
+  function commentsBlock(t) {
+    var canLog = A.can(state.who, 'log', t);
+    var comments = A.stepState(t, store.items('progress')).comments;
+    if (!comments.length && !canLog) return null;
+    var ul = el('ul', { class: 'comments' });
+    comments.forEach(function (c) {
+      ul.appendChild(el('li', {}, [el('span', { class: 'quiet who', text: [c.person, niceDate(c.date)].filter(Boolean).join(' · ') }), el('p', { text: c.comment })]));
+    });
+    var form = null;
+    if (canLog) {
+      var text = el('textarea', { id: 'commentText', rows: 2 });
+      form = el('form', { class: 'commentForm' }, [el('label', { for: 'commentText', class: 'sr', text: 'Comment' }), text,
+        el('button', { type: 'submit', class: 'quietBtn', id: 'addComment' }, ['Add comment'])]);
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var c = text.value.trim();
+        if (!c) { text.focus(); return; }
+        store.add('progress', { task: t.id, step: '', done: false, comment: c, date: derive.iso(new Date()) }).then(function (item) {
+          render(); openTask(t.id, '#commentText');
+          toast('Comment added.', { list: 'progress', id: item.id, added: true, focus: '#commentText' });
+        }).catch(showProblem);
+      });
+    }
+    return el('section', { class: 'taskPart', id: 'taskComments' }, [el('h3', { text: 'Comments' }), comments.length ? ul : null, form]);
+  }
+
+  function setTaskDone(t, done) {
+    store.update('tasks', t.id, { done: done }).then(function (res) {
+      render(); openTask(t.id, '#taskDone');
+      toast(done ? 'Done: ' + (t.title || 'task') + '.' : 'Back on the list.', { list: 'tasks', before: res.before });
+    }).catch(showProblem);
+  }
+
+  function addTaskForm(r) {
+    var input = el('input', { id: 'newTaskTitle', autocomplete: 'off' });
+    var form = el('form', { class: 'customAdd wide' }, [
+      el('div', { class: 'field' }, [el('label', { for: 'newTaskTitle', text: 'New task' }), input]),
+      el('button', { type: 'submit', class: 'quietBtn', id: 'addTask' }, ['Add task'])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = input.value.trim();
+      if (!title) { input.focus(); return; }
+      store.add('tasks', { record: r.id, title: title, assignedTo: me(), done: false }).then(function (t) {
+        render(); openTask(t.id, '#f-dueDate');
+        toast('Task added.', { list: 'tasks', id: t.id, added: true });
+      }).catch(showProblem);
+    });
+    return form;
   }
 
   var openSections = {};
   function section(key, kids, open) {
+    kids = kids.filter(Boolean);
+    if (!kids.length) return null; // a viewer sees only the parts that hold something
     var isOpen = key in openSections ? openSections[key] : open;
     var d = el('details', { class: 'more', 'data-section': key, open: isOpen }, [el('summary', { text: sectionName(key) }), el('div', { class: 'fields' }, kids)]);
     d.addEventListener('toggle', function () { openSections[key] = d.open; });
@@ -967,9 +1146,10 @@
   function taskList(tasks) {
     var ul = el('ul', { class: 'plainList' });
     tasks.forEach(function (t) {
+      var n = A.stepState(t, store.items('progress'));
       ul.appendChild(el('li', {}, [
-        el('span', { text: (t.done ? '✓ ' : '') + t.title }),
-        el('span', { class: 'quiet', text: [t.type, niceDate(t.dueDate), t.assignedTo].filter(Boolean).join(' · ') })
+        el('button', { type: 'button', class: 'link', 'data-task': t.id, text: (t.done ? '✓ ' : '') + (t.title || 'Task'), onclick: function () { openTask(t.id); } }),
+        el('span', { class: 'quiet', text: [t.type, niceDate(t.dueDate), t.assignedTo, n.done ? (n.done === 1 ? '1 step done' : n.done + ' steps done') : ''].filter(Boolean).join(' · ') })
       ]));
     });
     return ul;
@@ -1153,18 +1333,76 @@
   $('reset').addEventListener('click', function () {
     toast('This puts the sample back as it began, and your changes to it go.', null, {
       label: 'Start over',
-      run: function () { store.reset().then(function () { closeDetail(); render(); toast('The sample is back to its start.'); }); }
+      run: function () { store.reset().then(function () { return auth.start(); }).then(function (who) { closeDetail(); signedIn(who); toast('The sample is back to its start.'); }); }
     });
   });
 
-  store.load().then(function () {
+  // ---------- who is signed in ----------
+
+  function signedIn(person) {
+    if (!person) { showSignIn(); return; }
+    var before = state.who && state.who.person;
+    state.who = A.whoIs(rawStore.items('people'), person, { byEmailOnly: auth.mode === 'microsoft' });
+    if (before && before !== state.who.person) { // a different person starts on a fresh home page
+      state.view = 'home'; state.list = null; state.query = ''; $('search').value = ''; state.expanded = {}; state.archiveQuery = '';
+    }
+    state.myPrograms = !state.who.all; // viewers start on their own programs
+    if (state.view === 'setup' && !isEditor()) state.view = 'home';
+    loadLayout();
+    closeDetail();
     render();
+  }
+
+  function renderWho() {
+    var box = $('who');
+    box.innerHTML = '';
+    if (!state.who) return;
+    var role = state.who.role + (state.who.listed ? '' : ', not on the People list yet');
+    if (auth.mode === 'sample') {
+      var sel = el('select', { id: 'whoSelect' });
+      rawStore.items('people').forEach(function (p) { sel.appendChild(el('option', { value: p.person, text: p.person + ', ' + (p.role || 'Viewer') })); });
+      sel.value = state.who.person;
+      sel.addEventListener('change', function () { auth.signIn(sel.value).then(signedIn).then(function () { $('whoSelect').focus(); toast('Signed in as ' + sel.value + '.'); }); });
+      box.appendChild(el('span', { class: 'mode', text: 'Sample data' }));
+      box.appendChild(el('label', { for: 'whoSelect', class: 'sr', text: 'Signed in as' }));
+      box.appendChild(sel);
+    } else {
+      box.appendChild(el('span', { class: 'mode', id: 'whoName', text: state.who.person + ', ' + role }));
+      box.appendChild(el('button', { type: 'button', class: 'link', text: 'Sign out', onclick: function () { auth.signOut(); } }));
+    }
+  }
+
+  function showSignIn(problem, notSetUp) {
+    state.who = null;
+    $('who').innerHTML = '';
+    ['add', 'filtersBtn', 'setupBtn'].forEach(function (id) { $(id).hidden = true; });
+    document.querySelector('.bar').hidden = true;
+    listEl.innerHTML = '';
+    listEl.appendChild(el('div', { class: 'list signIn' }, [
+      el('h2', { text: 'Sign in' }),
+      problem ? el('p', { class: 'problem', text: problem }) : null,
+      notSetUp ? null : el('button', { type: 'button', class: 'primary', id: 'signIn', onclick: function () {
+        auth.signIn().catch(function (e) { console.error(e); showSignIn('Sign-in did not finish.'); });
+      } }, ['Sign in with Microsoft'])
+    ]));
+    document.body.setAttribute('data-loaded', 'yes');
+  }
+
+  store.load().then(function () { return auth.start(); }).then(function (person) {
+    if (!person) { showSignIn(); return; }
+    signedIn(person);
     document.body.setAttribute('data-loaded', 'yes');
   }).catch(function (e) {
+    if (auth.mode === 'microsoft') {
+      console.error(e);
+      if (e && e.notSetUp) showSignIn('Microsoft sign-in is not set up yet.', true);
+      else showSignIn('Sign-in did not finish.');
+      return;
+    }
     listEl.innerHTML = '';
     listEl.appendChild(el('p', { class: 'quiet', text: 'The records could not load: ' + e.message }));
   });
 
   // For the browser tests
-  window.NAMI.app = { store: store, render: render, openDetail: openDetail, state: state };
+  window.NAMI.app = { store: store, rawStore: rawStore, render: render, openDetail: openDetail, openTask: openTask, state: state, auth: auth };
 })();
