@@ -2,7 +2,7 @@
 
 A one-page grants and county-contract dashboard for NAMI Southeast Wisconsin, built over NAMI's own SharePoint lists. It replaces the ChatGPT Grant Dashboard and Grant Radar once it launches; both keep running until then.
 
-**Stage:** Phase 2 of 7 done (records: statuses, detail view, county contracts, archive). Phase 1 built the data layer and sample.
+**Stage:** Phase 3 of 7 done (home tiles, To-do, Awards toggle, filters). Phase 1 built the data layer and sample; Phase 2 the records, detail view and archive.
 
 ## See it
 
@@ -25,7 +25,7 @@ Open `index.html` in a browser, straight from the folder; no server and no insta
 - `js/data.js`: the data layer; Sample mode now, SharePoint mode in Phase 7, same interface
 - `js/sample-data.js`: the fictional sample
 - `js/derive.js`: what is worked out, never stored: Active from dates, multi-year, Due soon and past-date notes
-- `js/app.js`: the records page (Phase 2); the home tiles arrive in Phase 3
+- `js/app.js`: the home tiles, filters, full lists and the detail view
 - `lists.html`, `js/check.js`: every list as stored, for checking
 
 - What to build: [`SPEC.md`](SPEC.md)

@@ -85,6 +85,7 @@ test('in the browser: add, edit, status change, archive, restore, Undo, all kept
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   assert.equal(await page.$('dialog[open]'), null);
+  await page.fill('#search', 'Test grant from the browser');
   await page.locator('.row', { hasText: 'Test grant from the browser' }).click();
   await page.waitForSelector('dialog[open]');
   await page.fill('#f-funder', 'Test Fund (sample)');
@@ -112,17 +113,18 @@ test('in the browser: add, edit, status change, archive, restore, Undo, all kept
   await page.waitForFunction(() => window.NAMI.app.store.items('records').some((r) => r.name === 'Test grant from the browser' && r.archiveReason === 'Not pursued'));
   await page.click('.close');
 
-  // It leaves Grants and shows in Archive, found by search
-  assert.equal(await page.locator('.row', { hasText: 'Test grant from the browser' }).count(), 0);
-  await page.click('[data-tab=Archive]');
-  await page.fill('#search', 'test fund');
-  assert.equal(await page.locator('.row').count(), 1);
-  await page.fill('#search', 'not pursued');
-  assert.ok(await page.locator('.row', { hasText: 'Test grant from the browser' }).count() === 1, 'archive reason is searchable');
-  await page.fill('#search', 'test fund');
+  // It shows under Archived, and the Archive tile's search finds it by funder or reason
+  assert.equal(await page.locator('.group h2', { hasText: 'Archived' }).count(), 1);
+  await page.fill('#search', '');
+  await page.waitForSelector('[data-tile=archive]');
+  await page.fill('#archiveSearch', 'test fund');
+  assert.equal(await page.locator('#archiveList .row').count(), 1);
+  await page.fill('#archiveSearch', 'not pursued');
+  assert.equal(await page.locator('#archiveList .row', { hasText: 'Test grant from the browser' }).count(), 1, 'archive reason is searchable');
+  await page.fill('#archiveSearch', 'test fund');
 
   // Restore puts it back to the status it had
-  await page.click('.row');
+  await page.click('#archiveList .row');
   await page.click('.detailActions button');
   await page.waitForFunction(() => window.NAMI.app.store.items('records').some((r) => r.name === 'Test grant from the browser' && r.status === 'Upcoming' && !r.archiveReason));
 
@@ -133,14 +135,12 @@ test('in the browser: add, edit, status change, archive, restore, Undo, all kept
   assert.equal(kept.status, 'Upcoming');
   assert.equal(kept.funder, 'Test Fund (sample)');
 
-  // County contracts tab shows only contracts
-  await page.click('[data-tab="County contract"]');
-  const names = await page.locator('.rowName').allTextContents();
+  // The County contracts tile shows only contracts
+  const names = await page.locator('[data-tile=contracts] .rowName').allTextContents();
   const contracts = await page.evaluate(() => window.NAMI.app.store.items('records').filter((r) => r.recordType === 'County contract' && r.status !== 'Archived').map((r) => r.name));
   assert.deepEqual(names.sort(), contracts.sort());
 
   // Undo of an add removes it
-  await page.click('[data-tab=Grant]');
   await page.click('#add');
   await page.fill('#addName', 'Undo this one');
   await page.click('#addForm button[type=submit]');

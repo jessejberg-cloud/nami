@@ -12,7 +12,7 @@ Tester feedback and a Nov 1 interview led to a v2 rebuild of the Grant Dashboard
 
 - Interview answers: Angela is the champion (one of 3 senior-leader editors, room for 6); staff only, no volunteers; other staff read-only, filtered to their program; Microsoft 365 admins are Emily and Nicole; calendar year; "NAMI database" means their OneDrive.
 - Plan and gaps analysis: https://claude.ai/artifact/RYKZP5UCuqF5JmWwSPXLjK
-- Phase 1 (data layer, Sample mode, list schema, sample data) and Phase 2 (records: statuses, detail view, county contracts, archive, Undo) done 2026-11-01; waiting for Jesse's review before Phase 3 (home tiles, To-do, Awards toggle, filters). Jesse takes Claude's recommendations as defaults and is asked only when his judgment is needed.
+- Phase 1 (data layer, Sample mode, list schema, sample data), Phase 2 (records: statuses, detail view, county contracts, archive, Undo) and Phase 3 (home tiles, To-do, Awards toggle, filters) done 2026-11-01, 28 tests passing; waiting for Jesse's review before Phase 4 (labels, custom fields, collapse, drag, saved layout). Jesse takes Claude's recommendations as defaults and is asked only when his judgment is needed.
 - Jesse's working copy: `C:\Users\jesse\OneDrive\Office Space\08 Miscellaneous\NAMI Grant Dashboard`
 
 The stages below predate v2 and will be rewritten once its plan is approved.
