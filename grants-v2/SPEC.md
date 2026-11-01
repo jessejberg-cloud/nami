@@ -29,9 +29,9 @@ It is a rebuild from this spec, not a port of the ChatGPT version (D28).
 | Tasks | Record, Title, Type (Thank-you letter / 6-month report / 1-year report / Review / Other), Due date, Assigned to, Steps (one per line), Done |
 | Progress | Task, Person, Step, Done, Comment, Date (viewers can add) |
 | Watch | Name, Kind (Cycle / Renewal / Retry / Custom), Opens (month), Repeats yearly, Link, Notes, Linked record |
-| Feeds | Name, Type (Grants.gov / Feed link), Keywords or URL, On |
+| Feeds | Name, Type (Grants.gov / Feed link / Quick link), Keywords or URL, On |
 | Labels | Key, Default text, Custom text |
-| People | Person, Role, Programs |
+| People | Person, Email, Role, Programs |
 | Settings | Key, Value (programs, grant types, fiscal-year start = January, default award view, filters on/off, Grants.gov keywords) |
 
 Only Name is required (see Decided); Funder, Status and Owner were starred in the source plan. Calendar year (D8). Computed, not stored: Active, active years, multi-year flag, due-soon and past-date flags.
@@ -45,12 +45,12 @@ Each label shows a short explanation in parentheses; users can edit or remove it
 | Status | Means |
 |---|---|
 | Potentials | (opportunities we're considering) |
-| Upcoming | (decided to apply, deadline ahead) |
+| Upcoming | (decided to apply, apply-by date ahead) |
 | Applied | (submitted, waiting to hear) |
-| Active | (awarded, currently running) |
+| Active | (awarded, currently running; shown automatically, see Decided) |
 | Archived | (finished: Closed, Declined or Not pursued) |
 
-Status is a dropdown on every record; change any direction anytime, including out of Archived (D35). See open point 3 on how Active is set.
+Status is a dropdown on every record; change any direction anytime, including out of Archived (D35).
 
 ## Dashboard (one page, tiles)
 
@@ -132,12 +132,22 @@ Free Netlify account owned by NAMI, Jesse added. App registered in NAMI's Micros
 
 - **Urgency look and words (Nov 1, Jesse).** No red and no "overdue" or "deadline". Items that are due soon or past their date show a calm accent color, an icon and plain words ("Past due date", "Due this week"), and sort to the top of each tile.
 - **Required fields (Nov 1, Jesse).** Only Name is required. Status starts as Potentials and Owner as the person adding it; both can be changed. This replaces D10.
+- **Active (Nov 1, default).** People pick Awarded. The dashboard shows it as Active while today is within the start and end dates, as Awarded before the start date, and adds a "Past end date" item to To-do once the end date passes; a person then sets Archived (T5). Stored statuses: Potentials, Upcoming, Applied, Awarded, Archived.
+- **Hosting (Nov 1, default).** A NAMI-owned Netlify account (D27). STATUS.md's phase-two plan for Cloudflare does not apply to v2.
+- **Old programs (Nov 1, default).** The ChatGPT Grant Dashboard and Grant Radar keep running until v2 launches; the ChatGPT data is exported as CSV at the setup visit (D28).
+- **"Deadline" on screen (Nov 1, default).** The Records column is stored as Deadline, but its default label is "Apply by", matching Grant Radar. Upcoming reads "(decided to apply, apply-by date ahead)".
+- **Archive reason (Nov 1, default).** A choice of Closed, Declined, Not pursued.
+- **Spread view (Nov 1, default).** Even split across the calendar years a record covers; Award Years rows exist only once someone edits a year.
+- **Due soon (Nov 1, default).** Within 14 days, matching Needs attention.
+- **No build step (Nov 1, default).** Plain HTML, CSS and JavaScript files, loaded as ordinary scripts so the page also opens straight from a folder. The Microsoft sign-in library (MSAL) is loaded from a CDN in Phase 5.
+- **Sample data (Nov 1, default).** Fresh fictional records in the v2 shape, with fictional funders and dates set relative to today so the sample never goes stale. The three Milwaukee funding cycles are real names with the opening month left for NAMI to fill in.
 
-## Open points (Jesse's call, one at a time)
+- **Schema additions (Nov 1, default, Phase 1).** Feeds also take the type "Quick link", for the Wisconsin DHS page and other links that are not feeds. People has an Email column, so sign-in can match a person to their row. Settings keeps a `customColumns` row (key|label|type) so the page knows which extra Records columns to show and filter.
+- **Sample dates (Nov 1, default, Phase 1).** The sample's dates are fixed the first time it loads in a browser and kept after that, so edits survive. "Start the sample over" rebuilds them around the new today.
 
-1. **Active.** Stored as a status, or computed from Awarded + today within dates (T4)? Recommended: store Awarded, show Active or Ended automatically.
-2. **Hosting** is Netlify (D27); STATUS.md still says Cloudflare for phase two. Recommended: Netlify, and update STATUS.md.
-3. **Grant Radar and the live ChatGPT Dashboard** keep running until v2 launches.
+## How decisions are made
+
+Jesse, Nov 1: Claude's recommendations are the defaults; ask him only when his judgment is needed. Each default is recorded under Decided and named in the reply that follows it.
 
 ## Early tests (not yet run)
 
