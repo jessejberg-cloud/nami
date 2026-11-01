@@ -1,10 +1,21 @@
 # Where the NAMI Dashboard Suite stands
 
-*The one place that says where we are. Update it whenever a stage moves, a decision is made, or something goes live. Last updated 2026-10-05.*
+*The one place that says where we are. Update it whenever a stage moves, a decision is made, or something goes live. Last updated 2026-11-01.*
 
 ## Right now
 
 **Stage 1 of 5: talking it through with Emily (the Executive Director), this week.** Everything is built, live and documented. Jesse sent Emily an informal overview on 2026-10-05 with the landing page, the plan and the handbook, and four options to think about. Nothing has gone to staff yet. The next move is the conversation; then the answers come back here and the documents are updated to match.
+
+## New since 2026-11-01: Grants Dashboard v2
+
+Tester feedback and a Nov 1 interview led to a v2 rebuild of the Grant Dashboard, planned in `grants-v2/` (see `grants-v2/SPEC.md`). v2 sits over NAMI's own SharePoint lists, signs in with NAMI Microsoft 365, and folds Grant Radar into a Potentials status and a Funding Watch tile. The live ChatGPT Dashboard and Grant Radar keep running until v2 launches.
+
+- Interview answers: Angela is the champion (one of 3 senior-leader editors, room for 6); staff only, no volunteers; other staff read-only, filtered to their program; Microsoft 365 admins are Emily and Nicole; calendar year; "NAMI database" means their OneDrive.
+- Plan and gaps analysis: https://claude.ai/artifact/RYKZP5UCuqF5JmWwSPXLjK
+- Next: Jesse approves the phase plan and the open points in SPEC.md, then Phase 1 (data layer and sample data).
+- Jesse's working copy: `C:\Users\jesse\OneDrive\Office Space\08 Miscellaneous\NAMI Grant Dashboard`
+
+The stages below predate v2 and will be rewritten once its plan is approved.
 
 ## The stages
 
@@ -64,6 +75,8 @@ Tell Claude the four answers, plus a start date. Claude then:
 | 2026-10-05 | One handbook for everyone, leadership first, gaps included, PDF and Word |
 | 2026-10-05 | Phase two's home is a NAMI-owned GitHub organization and Cloudflare account, free at this size |
 | 2026-10-05 | Intrinsic Change (Jesse's practice tools) lives only in its own repository, never here |
+| 2026-11-01 | v2 of the Grant Dashboard is built in `grants-v2/` in this repository, from the Nov 1 v2 plan, not ported from the ChatGPT version |
+| 2026-11-01 | The portable ADHD design guide (`grants-v2/docs/adhd-design-guide.md`) is the design law for v2 |
 | *pending* | Who sends the program emails (the documents currently say Emily forwards them) |
 
 ## Where everything is

@@ -11,6 +11,7 @@ Three small programs for NAMI Southeast Wisconsin, plus their guides and a landi
 | repository root | Grant Dashboard (Next.js on a ChatGPT Site, Cloudflare D1) | `pnpm build`; tests `node --test tests/records.test.cjs`; `tsc --noEmit` |
 | `grant-radar/` | Grant Radar, one file | `node scripts/build.mjs`, then `scripts/build-docs.mjs`; tests in `tests/` |
 | `volunteers-and-events/` | Volunteers & Events, one file (phase two) | `node build.mjs`; `node tests/flow.test.mjs` |
+| `grants-v2/` | Grants Dashboard v2, planned: one static page over NAMI's SharePoint lists | read `grants-v2/CLAUDE.md` and `SPEC.md` first |
 | `guides/` | Suite guides, the handbook, the emails, the pre-flight list | order in `guides/README.md` |
 | `docs/` | The landing page (GitHub Pages) and the plan on one page | `node scripts/build-site.mjs` gathers it |
 | `archive/` | The superseded ChatGPT build of Volunteers & Events. Never edit | |

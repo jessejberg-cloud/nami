@@ -1,0 +1,2785 @@
+{
+  "source_file": "Grant_Management_Compliance_Dashboard_MVP.xlsx",
+  "as_of": "2026-09-11",
+  "note": "Synthetic planning/demo workbook. Original Excel serial dates and formulas are retained in the source workbook; JSON records use cached values when present and formula strings are included separately.",
+  "sheets": [
+    {
+      "name": "Config",
+      "headers": [
+        "Setting",
+        "Value"
+      ],
+      "row_count": 13,
+      "rows": [
+        {
+          "Setting": "Today",
+          "Value": "2026-09-11T00:00:00"
+        },
+        {
+          "Setting": "Critical score threshold",
+          "Value": 150
+        },
+        {
+          "Setting": "Approaching risk threshold",
+          "Value": 110
+        },
+        {
+          "Setting": "Decision threshold",
+          "Value": 85
+        },
+        {
+          "Setting": "Finance freshness warning days",
+          "Value": 30
+        },
+        {
+          "Setting": "Finance freshness critical days",
+          "Value": 60
+        },
+        {
+          "Setting": "Default internal lead days",
+          "Value": 14
+        },
+        {
+          "Setting": "Default data request lead days",
+          "Value": 23
+        },
+        {
+          "Setting": "Default finance lead days",
+          "Value": 13
+        },
+        {
+          "Setting": "Default draft lead days",
+          "Value": 8
+        },
+        {
+          "Setting": "Default review lead days",
+          "Value": 5
+        },
+        {
+          "Setting": "Portfolio owner",
+          "Value": "Associate Director"
+        },
+        {
+          "Setting": "NOTE",
+          "Value": "Sample data only. Replace with production values when connected."
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 34.0,
+        "B": 48.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Grants",
+      "headers": [
+        "Grant ID",
+        "Grant Name",
+        "Funder",
+        "Program",
+        "Grant Number",
+        "Award Amount",
+        "Start Date",
+        "End Date",
+        "Grant Manager",
+        "Responsible Executive",
+        "Program Owner",
+        "Finance Contact",
+        "Funder Contact",
+        "Lifecycle Status",
+        "Renewal Date",
+        "Source Documents URL",
+        "Authoritative Finance Source",
+        "Notes"
+      ],
+      "row_count": 3,
+      "rows": [
+        {
+          "Grant ID": "G-001",
+          "Grant Name": "SAMPLE — Community Services Grant",
+          "Funder": "Public Agency",
+          "Program": "Community Support",
+          "Grant Number": "SAMPLE-001",
+          "Award Amount": 250000,
+          "Start Date": 46023,
+          "End Date": 46387,
+          "Grant Manager": "Associate Director",
+          "Responsible Executive": "Executive Director",
+          "Program Owner": "Program Director",
+          "Finance Contact": "Finance Lead",
+          "Funder Contact": "Funder PM",
+          "Lifecycle Status": "Active",
+          "Renewal Date": 46341,
+          "Source Documents URL": null,
+          "Authoritative Finance Source": "Accounting system",
+          "Notes": "Synthetic test case"
+        },
+        {
+          "Grant ID": "G-002",
+          "Grant Name": "SAMPLE — Family Stabilization Grant",
+          "Funder": "Community Funder",
+          "Program": "Family Services",
+          "Grant Number": "SAMPLE-002",
+          "Award Amount": 125000,
+          "Start Date": 46113,
+          "End Date": 46477,
+          "Grant Manager": "Associate Director",
+          "Responsible Executive": "Executive Director",
+          "Program Owner": "Program Director",
+          "Finance Contact": "Finance Lead",
+          "Funder Contact": "Program Officer",
+          "Lifecycle Status": "Active",
+          "Renewal Date": 46402,
+          "Source Documents URL": null,
+          "Authoritative Finance Source": "Accounting system",
+          "Notes": "Synthetic test case"
+        },
+        {
+          "Grant ID": "G-003",
+          "Grant Name": "SAMPLE — Capacity Building Grant",
+          "Funder": "Private Foundation",
+          "Program": "Operations",
+          "Grant Number": "SAMPLE-003",
+          "Award Amount": 60000,
+          "Start Date": 46204,
+          "End Date": 46568,
+          "Grant Manager": "Associate Director",
+          "Responsible Executive": "Executive Director",
+          "Program Owner": "Operations Director",
+          "Finance Contact": "Finance Lead",
+          "Funder Contact": "Program Officer",
+          "Lifecycle Status": "Active",
+          "Renewal Date": 46447,
+          "Source Documents URL": null,
+          "Authoritative Finance Source": "Accounting system",
+          "Notes": "Synthetic test case"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 12.0,
+        "B": 34.0,
+        "C": 22.0,
+        "D": 20.0,
+        "E": 16.0,
+        "F": 16.0,
+        "G": 13.0,
+        "H": 13.0,
+        "I": 20.0,
+        "J": 20.0,
+        "K": 20.0,
+        "L": 18.0,
+        "M": 18.0,
+        "N": 17.0,
+        "O": 13.0,
+        "P": 36.0,
+        "Q": 26.0,
+        "R": 28.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Requirements",
+      "headers": [
+        "Requirement ID",
+        "Grant ID",
+        "Requirement",
+        "Category",
+        "Funder Deadline",
+        "Internal Deadline",
+        "Recurrence",
+        "Responsible Person",
+        "Reviewer",
+        "Dependency Summary",
+        "Status",
+        "Source Document URL",
+        "Source Citation/Page",
+        "Evidence Required?",
+        "Evidence Status",
+        "Verification Status",
+        "Notes"
+      ],
+      "row_count": 6,
+      "rows": [
+        {
+          "Requirement ID": "R-001",
+          "Grant ID": "G-001",
+          "Requirement": "Quarterly narrative report",
+          "Category": "Reporting",
+          "Funder Deadline": 46282,
+          "Internal Deadline": 46279,
+          "Recurrence": "Quarterly",
+          "Responsible Person": "Associate Director",
+          "Reviewer": "Executive Director",
+          "Dependency Summary": "Program data + finance data",
+          "Status": "In Progress",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        },
+        {
+          "Requirement ID": "R-002",
+          "Grant ID": "G-001",
+          "Requirement": "Quarterly financial report",
+          "Category": "Financial",
+          "Funder Deadline": 46282,
+          "Internal Deadline": 46279,
+          "Recurrence": "Quarterly",
+          "Responsible Person": "Finance Lead",
+          "Reviewer": "Associate Director",
+          "Dependency Summary": "Current ledger extract",
+          "Status": "At Risk",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        },
+        {
+          "Requirement ID": "R-003",
+          "Grant ID": "G-002",
+          "Requirement": "Participant outcome update",
+          "Category": "Deliverable",
+          "Funder Deadline": 46310,
+          "Internal Deadline": 46303,
+          "Recurrence": "Quarterly",
+          "Responsible Person": "Program Director",
+          "Reviewer": "Associate Director",
+          "Dependency Summary": "Outcome metric refresh",
+          "Status": "Not Started",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        },
+        {
+          "Requirement ID": "R-004",
+          "Grant ID": "G-003",
+          "Requirement": "Renewal go/no-go decision",
+          "Category": "Renewal",
+          "Funder Deadline": 46283,
+          "Internal Deadline": 46281,
+          "Recurrence": "Annual",
+          "Responsible Person": "Executive Director",
+          "Reviewer": "Associate Director",
+          "Dependency Summary": "Leadership decision",
+          "Status": "Decision Needed",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        },
+        {
+          "Requirement ID": "R-005",
+          "Grant ID": "G-001",
+          "Requirement": "Insurance certificate maintained",
+          "Category": "Compliance",
+          "Funder Deadline": 46357,
+          "Internal Deadline": 46341,
+          "Recurrence": "Annual",
+          "Responsible Person": "Operations Director",
+          "Reviewer": "Associate Director",
+          "Dependency Summary": "Current COI",
+          "Status": "Not Started",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        },
+        {
+          "Requirement ID": "R-006",
+          "Grant ID": "G-002",
+          "Requirement": "Final closeout package",
+          "Category": "Closeout",
+          "Funder Deadline": 46507,
+          "Internal Deadline": 46487,
+          "Recurrence": "One-time",
+          "Responsible Person": "Associate Director",
+          "Reviewer": "Executive Director",
+          "Dependency Summary": "Final program + financial reports",
+          "Status": "Not Started",
+          "Source Document URL": null,
+          "Source Citation/Page": "§ / page TBD",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Verification Status": "Verified",
+          "Notes": "Synthetic"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 14.0,
+        "B": 11.0,
+        "C": 36.0,
+        "D": 16.0,
+        "E": 14.0,
+        "F": 14.0,
+        "G": 14.0,
+        "H": 20.0,
+        "I": 20.0,
+        "J": 32.0,
+        "K": 18.0,
+        "L": 34.0,
+        "M": 18.0,
+        "N": 15.0,
+        "O": 16.0,
+        "P": 18.0,
+        "Q": 24.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Milestones",
+      "headers": [
+        "Milestone ID",
+        "Grant ID",
+        "Requirement ID",
+        "Milestone",
+        "Milestone Type",
+        "Date",
+        "Owner",
+        "Status",
+        "Calendar Event ID",
+        "Notes"
+      ],
+      "row_count": 7,
+      "rows": [
+        {
+          "Milestone ID": "M-001",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Milestone": "Program data due",
+          "Milestone Type": "Dependency",
+          "Date": 46275,
+          "Owner": "Program Director",
+          "Status": "Overdue",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-002",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-002",
+          "Milestone": "Finance data due",
+          "Milestone Type": "Dependency",
+          "Date": 46276,
+          "Owner": "Finance Lead",
+          "Status": "Due",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-003",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Milestone": "Executive review",
+          "Milestone Type": "Approval",
+          "Date": 46279,
+          "Owner": "Executive Director",
+          "Status": "Upcoming",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-004",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Milestone": "Funder report due",
+          "Milestone Type": "External deadline",
+          "Date": 46282,
+          "Owner": "Associate Director",
+          "Status": "Upcoming",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-005",
+          "Grant ID": "G-003",
+          "Requirement ID": "R-004",
+          "Milestone": "Renewal decision",
+          "Milestone Type": "Decision",
+          "Date": 46281,
+          "Owner": "Executive Director",
+          "Status": "Upcoming",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-006",
+          "Grant ID": "G-003",
+          "Requirement ID": "R-004",
+          "Milestone": "Renewal external date",
+          "Milestone Type": "External deadline",
+          "Date": 46283,
+          "Owner": "Associate Director",
+          "Status": "Upcoming",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        },
+        {
+          "Milestone ID": "M-007",
+          "Grant ID": "G-002",
+          "Requirement ID": "R-003",
+          "Milestone": "Outcome data refresh",
+          "Milestone Type": "Dependency",
+          "Date": 46303,
+          "Owner": "Program Director",
+          "Status": "Upcoming",
+          "Calendar Event ID": null,
+          "Notes": "Synthetic"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 14.0,
+        "B": 11.0,
+        "C": 14.0,
+        "D": 30.0,
+        "E": 20.0,
+        "F": 14.0,
+        "G": 20.0,
+        "H": 16.0,
+        "I": 22.0,
+        "J": 24.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Tasks",
+      "headers": [
+        "Task ID",
+        "Grant ID",
+        "Requirement ID",
+        "Task",
+        "Owner",
+        "Due Date",
+        "Reviewer",
+        "Status",
+        "Dependency Task ID",
+        "Dependency Status",
+        "Evidence Required?",
+        "Evidence Status",
+        "Associate Director Action?",
+        "Severity",
+        "Escalation Status",
+        "Notes",
+        "Priority Score",
+        "Rank Key"
+      ],
+      "row_count": 8,
+      "rows": [
+        {
+          "Task ID": "T-001",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Task": "Obtain participant/program data",
+          "Owner": "Program Director",
+          "Due Date": 46275,
+          "Reviewer": "Associate Director",
+          "Status": "Overdue",
+          "Dependency Task ID": null,
+          "Dependency Status": "=IF(I2=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I2,$A$2:$A$500,0)),\"MISSING\"))",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "No",
+          "Severity": "High",
+          "Escalation Status": "Escalated",
+          "Notes": "Program data was due yesterday",
+          "Priority Score": 135,
+          "Rank Key": 135.00002
+        },
+        {
+          "Task ID": "T-002",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-002",
+          "Task": "Obtain current finance data",
+          "Owner": "Finance Lead",
+          "Due Date": 46276,
+          "Reviewer": "Associate Director",
+          "Status": "Not Started",
+          "Dependency Task ID": null,
+          "Dependency Status": "=IF(I3=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I3,$A$2:$A$500,0)),\"MISSING\"))",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "No",
+          "Severity": "Critical",
+          "Escalation Status": "Escalated",
+          "Notes": "Required for report",
+          "Priority Score": 135,
+          "Rank Key": 135.00003
+        },
+        {
+          "Task ID": "T-003",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Task": "Draft narrative report",
+          "Owner": "Associate Director",
+          "Due Date": 46278,
+          "Reviewer": "Executive Director",
+          "Status": "Blocked",
+          "Dependency Task ID": "T-001",
+          "Dependency Status": "Overdue",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "Yes",
+          "Severity": "High",
+          "Escalation Status": "Open",
+          "Notes": "Blocked by program data",
+          "Priority Score": 195,
+          "Rank Key": 195.00004
+        },
+        {
+          "Task ID": "T-004",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-002",
+          "Task": "Review financial report",
+          "Owner": "Associate Director",
+          "Due Date": 46279,
+          "Reviewer": "Executive Director",
+          "Status": "Not Started",
+          "Dependency Task ID": "T-002",
+          "Dependency Status": "Not Started",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Associate Director Action?": "Yes",
+          "Severity": "Critical",
+          "Escalation Status": "Open",
+          "Notes": "Finance source stale",
+          "Priority Score": 235,
+          "Rank Key": 235.00005
+        },
+        {
+          "Task ID": "T-005",
+          "Grant ID": "G-003",
+          "Requirement ID": "R-004",
+          "Task": "Make renewal go/no-go decision",
+          "Owner": "Executive Director",
+          "Due Date": 46281,
+          "Reviewer": "Associate Director",
+          "Status": "Decision Needed",
+          "Dependency Task ID": null,
+          "Dependency Status": "=IF(I6=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I6,$A$2:$A$500,0)),\"MISSING\"))",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "Yes",
+          "Severity": "Medium",
+          "Escalation Status": "Open",
+          "Notes": "Leadership decision needed",
+          "Priority Score": 150,
+          "Rank Key": 150.00006
+        },
+        {
+          "Task ID": "T-006",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Task": "Submit quarterly report",
+          "Owner": "Associate Director",
+          "Due Date": 46282,
+          "Reviewer": "Executive Director",
+          "Status": "Not Started",
+          "Dependency Task ID": "T-003",
+          "Dependency Status": "Blocked",
+          "Evidence Required?": "Yes",
+          "Evidence Status": "Missing",
+          "Associate Director Action?": "Yes",
+          "Severity": "Critical",
+          "Escalation Status": "Open",
+          "Notes": "External deadline",
+          "Priority Score": 220,
+          "Rank Key": 220.00007
+        },
+        {
+          "Task ID": "T-007",
+          "Grant ID": "G-002",
+          "Requirement ID": "R-003",
+          "Task": "Refresh participant outcome metric",
+          "Owner": "Program Director",
+          "Due Date": 46303,
+          "Reviewer": "Associate Director",
+          "Status": "Not Started",
+          "Dependency Task ID": null,
+          "Dependency Status": "=IF(I8=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I8,$A$2:$A$500,0)),\"MISSING\"))",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "No",
+          "Severity": "Medium",
+          "Escalation Status": "None",
+          "Notes": null,
+          "Priority Score": 25,
+          "Rank Key": 25.00008
+        },
+        {
+          "Task ID": "T-008",
+          "Grant ID": "G-002",
+          "Requirement ID": "R-003",
+          "Task": "Review deliverable trajectory",
+          "Owner": "Associate Director",
+          "Due Date": 46280,
+          "Reviewer": "Program Director",
+          "Status": "Not Started",
+          "Dependency Task ID": "T-007",
+          "Dependency Status": "Not Started",
+          "Evidence Required?": "No",
+          "Evidence Status": "N/A",
+          "Associate Director Action?": "Yes",
+          "Severity": "High",
+          "Escalation Status": "Open",
+          "Notes": "Current performance below plan",
+          "Priority Score": 180,
+          "Rank Key": 180.00009
+        }
+      ],
+      "formulas": [
+        {
+          "cell": "J2",
+          "formula": "=IF(I2=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I2,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "Q2",
+          "formula": "=IF(H2=\"Complete\",-999,IF(M2=\"Yes\",70,0)+IF(F2<Config!$B$2,70,IF(F2-Config!$B$2<=3,50,IF(F2-Config!$B$2<=7,35,IF(F2-Config!$B$2<=14,20,5))))+IF(N2=\"Critical\",60,IF(N2=\"High\",40,IF(N2=\"Medium\",20,5)))+IF(AND(I2<>\"\",J2<>\"Complete\"),35,0)+IF(AND(K2=\"Yes\",L2<>\"Complete\"),20,0)+IF(O2=\"Escalated\",25,0)+IF(H2=\"Decision Needed\",25,0))",
+          "cached_value": 135
+        },
+        {
+          "cell": "R2",
+          "formula": "=Q2+ROW()/100000",
+          "cached_value": 135.00002
+        },
+        {
+          "cell": "J3",
+          "formula": "=IF(I3=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I3,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "Q3",
+          "formula": "=IF(H3=\"Complete\",-999,IF(M3=\"Yes\",70,0)+IF(F3<Config!$B$2,70,IF(F3-Config!$B$2<=3,50,IF(F3-Config!$B$2<=7,35,IF(F3-Config!$B$2<=14,20,5))))+IF(N3=\"Critical\",60,IF(N3=\"High\",40,IF(N3=\"Medium\",20,5)))+IF(AND(I3<>\"\",J3<>\"Complete\"),35,0)+IF(AND(K3=\"Yes\",L3<>\"Complete\"),20,0)+IF(O3=\"Escalated\",25,0)+IF(H3=\"Decision Needed\",25,0))",
+          "cached_value": 135
+        },
+        {
+          "cell": "R3",
+          "formula": "=Q3+ROW()/100000",
+          "cached_value": 135.00003
+        },
+        {
+          "cell": "J4",
+          "formula": "=IF(I4=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I4,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": "Overdue"
+        },
+        {
+          "cell": "Q4",
+          "formula": "=IF(H4=\"Complete\",-999,IF(M4=\"Yes\",70,0)+IF(F4<Config!$B$2,70,IF(F4-Config!$B$2<=3,50,IF(F4-Config!$B$2<=7,35,IF(F4-Config!$B$2<=14,20,5))))+IF(N4=\"Critical\",60,IF(N4=\"High\",40,IF(N4=\"Medium\",20,5)))+IF(AND(I4<>\"\",J4<>\"Complete\"),35,0)+IF(AND(K4=\"Yes\",L4<>\"Complete\"),20,0)+IF(O4=\"Escalated\",25,0)+IF(H4=\"Decision Needed\",25,0))",
+          "cached_value": 195
+        },
+        {
+          "cell": "R4",
+          "formula": "=Q4+ROW()/100000",
+          "cached_value": 195.00004
+        },
+        {
+          "cell": "J5",
+          "formula": "=IF(I5=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I5,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": "Not Started"
+        },
+        {
+          "cell": "Q5",
+          "formula": "=IF(H5=\"Complete\",-999,IF(M5=\"Yes\",70,0)+IF(F5<Config!$B$2,70,IF(F5-Config!$B$2<=3,50,IF(F5-Config!$B$2<=7,35,IF(F5-Config!$B$2<=14,20,5))))+IF(N5=\"Critical\",60,IF(N5=\"High\",40,IF(N5=\"Medium\",20,5)))+IF(AND(I5<>\"\",J5<>\"Complete\"),35,0)+IF(AND(K5=\"Yes\",L5<>\"Complete\"),20,0)+IF(O5=\"Escalated\",25,0)+IF(H5=\"Decision Needed\",25,0))",
+          "cached_value": 235
+        },
+        {
+          "cell": "R5",
+          "formula": "=Q5+ROW()/100000",
+          "cached_value": 235.00005
+        },
+        {
+          "cell": "J6",
+          "formula": "=IF(I6=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I6,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "Q6",
+          "formula": "=IF(H6=\"Complete\",-999,IF(M6=\"Yes\",70,0)+IF(F6<Config!$B$2,70,IF(F6-Config!$B$2<=3,50,IF(F6-Config!$B$2<=7,35,IF(F6-Config!$B$2<=14,20,5))))+IF(N6=\"Critical\",60,IF(N6=\"High\",40,IF(N6=\"Medium\",20,5)))+IF(AND(I6<>\"\",J6<>\"Complete\"),35,0)+IF(AND(K6=\"Yes\",L6<>\"Complete\"),20,0)+IF(O6=\"Escalated\",25,0)+IF(H6=\"Decision Needed\",25,0))",
+          "cached_value": 150
+        },
+        {
+          "cell": "R6",
+          "formula": "=Q6+ROW()/100000",
+          "cached_value": 150.00006
+        },
+        {
+          "cell": "J7",
+          "formula": "=IF(I7=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I7,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": "Blocked"
+        },
+        {
+          "cell": "Q7",
+          "formula": "=IF(H7=\"Complete\",-999,IF(M7=\"Yes\",70,0)+IF(F7<Config!$B$2,70,IF(F7-Config!$B$2<=3,50,IF(F7-Config!$B$2<=7,35,IF(F7-Config!$B$2<=14,20,5))))+IF(N7=\"Critical\",60,IF(N7=\"High\",40,IF(N7=\"Medium\",20,5)))+IF(AND(I7<>\"\",J7<>\"Complete\"),35,0)+IF(AND(K7=\"Yes\",L7<>\"Complete\"),20,0)+IF(O7=\"Escalated\",25,0)+IF(H7=\"Decision Needed\",25,0))",
+          "cached_value": 220
+        },
+        {
+          "cell": "R7",
+          "formula": "=Q7+ROW()/100000",
+          "cached_value": 220.00007
+        },
+        {
+          "cell": "J8",
+          "formula": "=IF(I8=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I8,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "Q8",
+          "formula": "=IF(H8=\"Complete\",-999,IF(M8=\"Yes\",70,0)+IF(F8<Config!$B$2,70,IF(F8-Config!$B$2<=3,50,IF(F8-Config!$B$2<=7,35,IF(F8-Config!$B$2<=14,20,5))))+IF(N8=\"Critical\",60,IF(N8=\"High\",40,IF(N8=\"Medium\",20,5)))+IF(AND(I8<>\"\",J8<>\"Complete\"),35,0)+IF(AND(K8=\"Yes\",L8<>\"Complete\"),20,0)+IF(O8=\"Escalated\",25,0)+IF(H8=\"Decision Needed\",25,0))",
+          "cached_value": 25
+        },
+        {
+          "cell": "R8",
+          "formula": "=Q8+ROW()/100000",
+          "cached_value": 25.00008
+        },
+        {
+          "cell": "J9",
+          "formula": "=IF(I9=\"\",\"\",IFERROR(INDEX($H$2:$H$500,MATCH(I9,$A$2:$A$500,0)),\"MISSING\"))",
+          "cached_value": "Not Started"
+        },
+        {
+          "cell": "Q9",
+          "formula": "=IF(H9=\"Complete\",-999,IF(M9=\"Yes\",70,0)+IF(F9<Config!$B$2,70,IF(F9-Config!$B$2<=3,50,IF(F9-Config!$B$2<=7,35,IF(F9-Config!$B$2<=14,20,5))))+IF(N9=\"Critical\",60,IF(N9=\"High\",40,IF(N9=\"Medium\",20,5)))+IF(AND(I9<>\"\",J9<>\"Complete\"),35,0)+IF(AND(K9=\"Yes\",L9<>\"Complete\"),20,0)+IF(O9=\"Escalated\",25,0)+IF(H9=\"Decision Needed\",25,0))",
+          "cached_value": 180
+        },
+        {
+          "cell": "R9",
+          "formula": "=Q9+ROW()/100000",
+          "cached_value": 180.00009
+        }
+      ],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 13.0,
+        "B": 11.0,
+        "C": 14.0,
+        "D": 34.0,
+        "E": 20.0,
+        "F": 13.0,
+        "G": 20.0,
+        "H": 18.0,
+        "I": 16.0,
+        "J": 18.0,
+        "K": 15.0,
+        "L": 16.0,
+        "M": 18.0,
+        "N": 12.0,
+        "O": 18.0,
+        "P": 32.0,
+        "Q": 14.0,
+        "R": 13.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Evidence",
+      "headers": [
+        "Evidence ID",
+        "Grant ID",
+        "Requirement ID",
+        "Task ID",
+        "Evidence Type",
+        "Document/Receipt URL",
+        "Submission Date",
+        "Submitted By",
+        "Confirmation/Receipt",
+        "Verified By",
+        "Verification Date",
+        "Status",
+        "Notes"
+      ],
+      "row_count": 2,
+      "rows": [
+        {
+          "Evidence ID": "E-001",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Task ID": "T-006",
+          "Evidence Type": "Funder submission receipt",
+          "Document/Receipt URL": null,
+          "Submission Date": null,
+          "Submitted By": "Associate Director",
+          "Confirmation/Receipt": null,
+          "Verified By": null,
+          "Verification Date": null,
+          "Status": "Missing",
+          "Notes": "Synthetic placeholder"
+        },
+        {
+          "Evidence ID": "E-002",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-002",
+          "Task ID": "T-004",
+          "Evidence Type": "Financial report source",
+          "Document/Receipt URL": null,
+          "Submission Date": null,
+          "Submitted By": "Finance Lead",
+          "Confirmation/Receipt": null,
+          "Verified By": null,
+          "Verification Date": null,
+          "Status": "Missing",
+          "Notes": "Synthetic placeholder"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 13.0,
+        "B": 11.0,
+        "C": 14.0,
+        "D": 12.0,
+        "E": 28.0,
+        "F": 36.0,
+        "G": 14.0,
+        "H": 20.0,
+        "I": 30.0,
+        "J": 20.0,
+        "K": 14.0,
+        "L": 16.0,
+        "M": 24.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Issues",
+      "headers": [
+        "Issue ID",
+        "Grant ID",
+        "Requirement ID",
+        "Issue",
+        "Severity",
+        "Owner",
+        "Date Identified",
+        "Resolution",
+        "Escalation Status",
+        "Status",
+        "Source/Notes"
+      ],
+      "row_count": 4,
+      "rows": [
+        {
+          "Issue ID": "I-001",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-001",
+          "Issue": "Participant data overdue",
+          "Severity": "High",
+          "Owner": "Program Director",
+          "Date Identified": 46276,
+          "Resolution": null,
+          "Escalation Status": "Escalated",
+          "Status": "Open",
+          "Source/Notes": "Dependency missed"
+        },
+        {
+          "Issue ID": "I-002",
+          "Grant ID": "G-001",
+          "Requirement ID": "R-002",
+          "Issue": "Financial data is stale",
+          "Severity": "Critical",
+          "Owner": "Finance Lead",
+          "Date Identified": 46276,
+          "Resolution": null,
+          "Escalation Status": "Escalated",
+          "Status": "Open",
+          "Source/Notes": "Last authoritative update >60 days"
+        },
+        {
+          "Issue ID": "I-003",
+          "Grant ID": "G-002",
+          "Requirement ID": "R-003",
+          "Issue": "Deliverable below expected trajectory",
+          "Severity": "Medium",
+          "Owner": "Program Director",
+          "Date Identified": 46276,
+          "Resolution": null,
+          "Escalation Status": "Open",
+          "Status": "Open",
+          "Source/Notes": "Management warning; not funder conclusion"
+        },
+        {
+          "Issue ID": "I-004",
+          "Grant ID": "G-003",
+          "Requirement ID": "R-004",
+          "Issue": "Renewal decision pending",
+          "Severity": "Medium",
+          "Owner": "Executive Director",
+          "Date Identified": 46276,
+          "Resolution": null,
+          "Escalation Status": "Open",
+          "Status": "Open",
+          "Source/Notes": "Decision needed this week"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 12.0,
+        "B": 11.0,
+        "C": 14.0,
+        "D": 36.0,
+        "E": 12.0,
+        "F": 20.0,
+        "G": 14.0,
+        "H": 32.0,
+        "I": 18.0,
+        "J": 14.0,
+        "K": 36.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Financials",
+      "headers": [
+        "Grant ID",
+        "Award Amount",
+        "Amount Spent",
+        "Committed Funds",
+        "Remaining Funds",
+        "Grant % Elapsed",
+        "Spend %",
+        "Last Authoritative Update",
+        "Days Stale",
+        "Financial Health",
+        "Management Warning",
+        "Authoritative Source URL"
+      ],
+      "row_count": 3,
+      "rows": [
+        {
+          "Grant ID": "G-001",
+          "Award Amount": 250000,
+          "Amount Spent": 112500,
+          "Committed Funds": 15000,
+          "Remaining Funds": 122500,
+          "Grant % Elapsed": 0.695054945054945,
+          "Spend %": 0.45,
+          "Last Authoritative Update": 46223,
+          "Days Stale": 53,
+          "Financial Health": "AT RISK",
+          "Management Warning": "Potential underspending — review",
+          "Authoritative Source URL": null
+        },
+        {
+          "Grant ID": "G-002",
+          "Award Amount": 125000,
+          "Amount Spent": 43000,
+          "Committed Funds": 9000,
+          "Remaining Funds": 73000,
+          "Grant % Elapsed": 0.4478021978021978,
+          "Spend %": 0.344,
+          "Last Authoritative Update": 46270,
+          "Days Stale": 6,
+          "Financial Health": "HEALTHY",
+          "Management Warning": "=IF(J3=\"UNKNOWN\",\"Financial data missing or stale\",IF(G3>F3+0.20,\"Potential overspending — review\",IF(G3<F3-0.20,\"Potential underspending — review\",\"\")))",
+          "Authoritative Source URL": null
+        },
+        {
+          "Grant ID": "G-003",
+          "Award Amount": 60000,
+          "Amount Spent": 8000,
+          "Committed Funds": 2500,
+          "Remaining Funds": 49500,
+          "Grant % Elapsed": 0.1978021978021978,
+          "Spend %": 0.13333333333333333,
+          "Last Authoritative Update": null,
+          "Days Stale": "=IF(H4=\"\",\"\",Config!$B$2-H4)",
+          "Financial Health": "UNKNOWN",
+          "Management Warning": "Financial data missing or stale",
+          "Authoritative Source URL": null
+        }
+      ],
+      "formulas": [
+        {
+          "cell": "E2",
+          "formula": "=B2-C2-D2",
+          "cached_value": 122500
+        },
+        {
+          "cell": "F2",
+          "formula": "=IFERROR((Config!$B$2-INDEX(Grants!$G$2:$G$500,MATCH(A2,Grants!$A$2:$A$500,0)))/(INDEX(Grants!$H$2:$H$500,MATCH(A2,Grants!$A$2:$A$500,0))-INDEX(Grants!$G$2:$G$500,MATCH(A2,Grants!$A$2:$A$500,0))),0)",
+          "cached_value": 0.695054945054945
+        },
+        {
+          "cell": "G2",
+          "formula": "=IFERROR(C2/B2,0)",
+          "cached_value": 0.45
+        },
+        {
+          "cell": "I2",
+          "formula": "=IF(H2=\"\",\"\",Config!$B$2-H2)",
+          "cached_value": 53
+        },
+        {
+          "cell": "J2",
+          "formula": "=IF(H2=\"\",\"UNKNOWN\",IF(I2>Config!$B$7,\"UNKNOWN\",IF(G2>F2+0.20,\"AT RISK\",IF(G2<F2-0.20,\"AT RISK\",\"HEALTHY\"))))",
+          "cached_value": "AT RISK"
+        },
+        {
+          "cell": "K2",
+          "formula": "=IF(J2=\"UNKNOWN\",\"Financial data missing or stale\",IF(G2>F2+0.20,\"Potential overspending — review\",IF(G2<F2-0.20,\"Potential underspending — review\",\"\")))",
+          "cached_value": "Potential underspending — review"
+        },
+        {
+          "cell": "E3",
+          "formula": "=B3-C3-D3",
+          "cached_value": 73000
+        },
+        {
+          "cell": "F3",
+          "formula": "=IFERROR((Config!$B$2-INDEX(Grants!$G$2:$G$500,MATCH(A3,Grants!$A$2:$A$500,0)))/(INDEX(Grants!$H$2:$H$500,MATCH(A3,Grants!$A$2:$A$500,0))-INDEX(Grants!$G$2:$G$500,MATCH(A3,Grants!$A$2:$A$500,0))),0)",
+          "cached_value": 0.4478021978021978
+        },
+        {
+          "cell": "G3",
+          "formula": "=IFERROR(C3/B3,0)",
+          "cached_value": 0.344
+        },
+        {
+          "cell": "I3",
+          "formula": "=IF(H3=\"\",\"\",Config!$B$2-H3)",
+          "cached_value": 6
+        },
+        {
+          "cell": "J3",
+          "formula": "=IF(H3=\"\",\"UNKNOWN\",IF(I3>Config!$B$7,\"UNKNOWN\",IF(G3>F3+0.20,\"AT RISK\",IF(G3<F3-0.20,\"AT RISK\",\"HEALTHY\"))))",
+          "cached_value": "HEALTHY"
+        },
+        {
+          "cell": "K3",
+          "formula": "=IF(J3=\"UNKNOWN\",\"Financial data missing or stale\",IF(G3>F3+0.20,\"Potential overspending — review\",IF(G3<F3-0.20,\"Potential underspending — review\",\"\")))",
+          "cached_value": null
+        },
+        {
+          "cell": "E4",
+          "formula": "=B4-C4-D4",
+          "cached_value": 49500
+        },
+        {
+          "cell": "F4",
+          "formula": "=IFERROR((Config!$B$2-INDEX(Grants!$G$2:$G$500,MATCH(A4,Grants!$A$2:$A$500,0)))/(INDEX(Grants!$H$2:$H$500,MATCH(A4,Grants!$A$2:$A$500,0))-INDEX(Grants!$G$2:$G$500,MATCH(A4,Grants!$A$2:$A$500,0))),0)",
+          "cached_value": 0.1978021978021978
+        },
+        {
+          "cell": "G4",
+          "formula": "=IFERROR(C4/B4,0)",
+          "cached_value": 0.13333333333333333
+        },
+        {
+          "cell": "I4",
+          "formula": "=IF(H4=\"\",\"\",Config!$B$2-H4)",
+          "cached_value": null
+        },
+        {
+          "cell": "J4",
+          "formula": "=IF(H4=\"\",\"UNKNOWN\",IF(I4>Config!$B$7,\"UNKNOWN\",IF(G4>F4+0.20,\"AT RISK\",IF(G4<F4-0.20,\"AT RISK\",\"HEALTHY\"))))",
+          "cached_value": "UNKNOWN"
+        },
+        {
+          "cell": "K4",
+          "formula": "=IF(J4=\"UNKNOWN\",\"Financial data missing or stale\",IF(G4>F4+0.20,\"Potential overspending — review\",IF(G4<F4-0.20,\"Potential underspending — review\",\"\")))",
+          "cached_value": "Financial data missing or stale"
+        }
+      ],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 11.0,
+        "B": 15.0,
+        "C": 15.0,
+        "D": 16.0,
+        "E": 16.0,
+        "F": 14.0,
+        "G": 12.0,
+        "H": 20.0,
+        "I": 12.0,
+        "J": 18.0,
+        "K": 34.0,
+        "L": 34.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "ProgramMetrics",
+      "headers": [
+        "Metric ID",
+        "Metric Name",
+        "Definition",
+        "Authoritative Source",
+        "Last Update",
+        "Value",
+        "Target",
+        "Unit",
+        "Freshness Days",
+        "Data Confidence",
+        "Used By Grants",
+        "Notes"
+      ],
+      "row_count": 2,
+      "rows": [
+        {
+          "Metric ID": "PM-001",
+          "Metric Name": "Participants served",
+          "Definition": "Unique participants meeting program definition",
+          "Authoritative Source": "Program outcome system",
+          "Last Update": 46266,
+          "Value": 78,
+          "Target": 100,
+          "Unit": "participants",
+          "Freshness Days": 10,
+          "Data Confidence": "CURRENT",
+          "Used By Grants": "G-001; G-002",
+          "Notes": "Reusable program metric"
+        },
+        {
+          "Metric ID": "PM-002",
+          "Metric Name": "Successful stabilization rate",
+          "Definition": "Funder-specific numerator/denominator rules",
+          "Authoritative Source": "Program outcome system",
+          "Last Update": 46249,
+          "Value": 0.61,
+          "Target": 0.7,
+          "Unit": "rate",
+          "Freshness Days": 27,
+          "Data Confidence": "CURRENT",
+          "Used By Grants": "G-002",
+          "Notes": "Confirm funder-specific definition before reuse"
+        }
+      ],
+      "formulas": [
+        {
+          "cell": "I2",
+          "formula": "=IF(E2=\"\",\"\",Config!$B$2-E2)",
+          "cached_value": 10
+        },
+        {
+          "cell": "J2",
+          "formula": "=IF(E2=\"\",\"UNKNOWN\",IF(I2>30,\"STALE\",\"CURRENT\"))",
+          "cached_value": "CURRENT"
+        },
+        {
+          "cell": "I3",
+          "formula": "=IF(E3=\"\",\"\",Config!$B$2-E3)",
+          "cached_value": 27
+        },
+        {
+          "cell": "J3",
+          "formula": "=IF(E3=\"\",\"UNKNOWN\",IF(I3>30,\"STALE\",\"CURRENT\"))",
+          "cached_value": "CURRENT"
+        }
+      ],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 13.0,
+        "B": 28.0,
+        "C": 44.0,
+        "D": 28.0,
+        "E": 14.0,
+        "F": 12.0,
+        "G": 12.0,
+        "H": 14.0,
+        "I": 14.0,
+        "J": 18.0,
+        "K": 20.0,
+        "L": 36.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "SourceOfTruth",
+      "headers": [
+        "Information Type",
+        "Authoritative System",
+        "Dashboard Role",
+        "Sync Direction",
+        "Status",
+        "Implementation Note"
+      ],
+      "row_count": 8,
+      "rows": [
+        {
+          "Information Type": "Grant agreements / amendments",
+          "Authoritative System": "SharePoint / Google Drive (production TBD)",
+          "Dashboard Role": "Link + extracted proposals only",
+          "Sync Direction": "Source → Dashboard",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Do not duplicate document repository"
+        },
+        {
+          "Information Type": "Financial transactions / balances",
+          "Authoritative System": "Accounting system (TBD)",
+          "Dashboard Role": "Read management indicators + freshness",
+          "Sync Direction": "Source → Dashboard",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Never treat dashboard as accounting ledger"
+        },
+        {
+          "Information Type": "Structured grant requirements",
+          "Authoritative System": "Grant Dashboard datastore",
+          "Dashboard Role": "Authoritative workflow record",
+          "Sync Direction": "Dashboard",
+          "Status": "ACTIVE",
+          "Implementation Note": "Verified requirements only"
+        },
+        {
+          "Information Type": "Tasks / dependencies",
+          "Authoritative System": "Grant Dashboard datastore",
+          "Dashboard Role": "Authoritative workflow record",
+          "Sync Direction": "Dashboard",
+          "Status": "ACTIVE",
+          "Implementation Note": "Requirement ≠ Task"
+        },
+        {
+          "Information Type": "Calendar deadlines",
+          "Authoritative System": "Production calendar (TBD)",
+          "Dashboard Role": "Scheduled representation",
+          "Sync Direction": "Two-way when safe",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Use event IDs to prevent duplicates"
+        },
+        {
+          "Information Type": "Evidence / submission receipts",
+          "Authoritative System": "Existing document repository + dashboard links",
+          "Dashboard Role": "Index + verification state",
+          "Sync Direction": "Source → Dashboard",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Completion requires proof for important obligations"
+        },
+        {
+          "Information Type": "Program outcomes",
+          "Authoritative System": "Existing outcome system (TBD)",
+          "Dashboard Role": "Reusable aggregate metrics",
+          "Sync Direction": "Source → Dashboard",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Preserve funder-specific definitions"
+        },
+        {
+          "Information Type": "Email change notices",
+          "Authoritative System": "Production email (TBD)",
+          "Dashboard Role": "Propose changes, never auto-authorize",
+          "Sync Direction": "Source → Proposed Change",
+          "Status": "MANUAL/TBD",
+          "Implementation Note": "Require human confirmation"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 28.0,
+        "B": 34.0,
+        "C": 36.0,
+        "D": 22.0,
+        "E": 16.0,
+        "F": 48.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "ChangeLog",
+      "headers": [
+        "Change ID",
+        "Timestamp",
+        "User",
+        "Entity Type",
+        "Entity ID",
+        "Field",
+        "Previous Value",
+        "New Value",
+        "Source/Evidence",
+        "Reason"
+      ],
+      "row_count": 1,
+      "rows": [
+        {
+          "Change ID": "C-001",
+          "Timestamp": 46276.333333333336,
+          "User": "System Build",
+          "Entity Type": "System",
+          "Entity ID": "MVP",
+          "Field": "Initialization",
+          "Previous Value": null,
+          "New Value": "Portable MVP created",
+          "Source/Evidence": "User request",
+          "Reason": "Initial build"
+        }
+      ],
+      "formulas": [],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 12.0,
+        "B": 20.0,
+        "C": 18.0,
+        "D": 16.0,
+        "E": 14.0,
+        "F": 20.0,
+        "G": 24.0,
+        "H": 24.0,
+        "I": 30.0,
+        "J": 30.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "ActionQueue",
+      "headers": [
+        "Rank",
+        "Task ID",
+        "Grant",
+        "Action",
+        "Owner",
+        "Due",
+        "Why it needs attention",
+        "Score",
+        "Recommended Action"
+      ],
+      "row_count": 20,
+      "rows": [
+        {
+          "Rank": 1,
+          "Task ID": "T-004",
+          "Grant": "SAMPLE — Community Services Grant",
+          "Action": "Review financial report",
+          "Owner": "Associate Director",
+          "Due": 46279,
+          "Why it needs attention": "Finance source stale",
+          "Score": 235,
+          "Recommended Action": "Review / act"
+        },
+        {
+          "Rank": 2,
+          "Task ID": "T-006",
+          "Grant": "SAMPLE — Community Services Grant",
+          "Action": "Submit quarterly report",
+          "Owner": "Associate Director",
+          "Due": 46282,
+          "Why it needs attention": "External deadline",
+          "Score": 220,
+          "Recommended Action": "Review / act"
+        },
+        {
+          "Rank": 3,
+          "Task ID": "T-003",
+          "Grant": "SAMPLE — Community Services Grant",
+          "Action": "Draft narrative report",
+          "Owner": "Associate Director",
+          "Due": 46278,
+          "Why it needs attention": "Blocked by program data",
+          "Score": 195,
+          "Recommended Action": "Review / act"
+        },
+        {
+          "Rank": 4,
+          "Task ID": "T-008",
+          "Grant": "SAMPLE — Family Stabilization Grant",
+          "Action": "Review deliverable trajectory",
+          "Owner": "Associate Director",
+          "Due": 46280,
+          "Why it needs attention": "Current performance below plan",
+          "Score": 180,
+          "Recommended Action": "Review / act"
+        },
+        {
+          "Rank": 5,
+          "Task ID": "T-005",
+          "Grant": "SAMPLE — Capacity Building Grant",
+          "Action": "Make renewal go/no-go decision",
+          "Owner": "Executive Director",
+          "Due": 46281,
+          "Why it needs attention": "Leadership decision needed",
+          "Score": 150,
+          "Recommended Action": "Review / act"
+        },
+        {
+          "Rank": 6,
+          "Task ID": "T-002",
+          "Grant": "SAMPLE — Community Services Grant",
+          "Action": "Obtain current finance data",
+          "Owner": "Finance Lead",
+          "Due": 46276,
+          "Why it needs attention": "Required for report",
+          "Score": 135,
+          "Recommended Action": "Monitor owner / escalate by rule"
+        },
+        {
+          "Rank": 7,
+          "Task ID": "T-001",
+          "Grant": "SAMPLE — Community Services Grant",
+          "Action": "Obtain participant/program data",
+          "Owner": "Program Director",
+          "Due": 46275,
+          "Why it needs attention": "Program data was due yesterday",
+          "Score": 135,
+          "Recommended Action": "Monitor owner / escalate by rule"
+        },
+        {
+          "Rank": 8,
+          "Task ID": "T-007",
+          "Grant": "SAMPLE — Family Stabilization Grant",
+          "Action": "Refresh participant outcome metric",
+          "Owner": "Program Director",
+          "Due": 46303,
+          "Why it needs attention": "=IF(B9=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "Score": 25,
+          "Recommended Action": "Monitor owner / escalate by rule"
+        },
+        {
+          "Rank": 9,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A10),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B10=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B10,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B10=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B10=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B10=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B10=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B10=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B10=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B10,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 10,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A11),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B11=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B11,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B11=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B11=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B11=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B11=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B11=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B11=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B11,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 11,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A12),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B12=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B12,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B12=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B12=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B12=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B12=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B12=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B12=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B12,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 12,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A13),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B13=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B13,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B13=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B13=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B13=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B13=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B13=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B13=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B13,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 13,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A14),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B14=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B14,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B14=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B14=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B14=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B14=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B14=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B14=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B14,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 14,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A15),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B15=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B15,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B15=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B15=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B15=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B15=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B15=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B15=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B15,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 15,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A16),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B16=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B16,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B16=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B16=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B16=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B16=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B16=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B16=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B16,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 16,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A17),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B17=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B17,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B17=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B17=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B17=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B17=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B17=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B17=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B17,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 17,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A18),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B18=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B18,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B18=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B18=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B18=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B18=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B18=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B18=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B18,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 18,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A19),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B19=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B19,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B19=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B19=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B19=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B19=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B19=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B19=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B19,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 19,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A20),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B20=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B20,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B20=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B20=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B20=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B20=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B20=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B20=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B20,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        },
+        {
+          "Rank": 20,
+          "Task ID": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A21),Tasks!$R$2:$R$500,0)),\"\")",
+          "Grant": "=IF(B21=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B21,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "Action": "=IF(B21=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "Owner": "=IF(B21=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "Due": "=IF(B21=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "Why it needs attention": "=IF(B21=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "Score": "=IF(B21=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "Recommended Action": "=IF(B21=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B21,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))"
+        }
+      ],
+      "formulas": [
+        {
+          "cell": "B2",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A2),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-004"
+        },
+        {
+          "cell": "C2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B2,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "D2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B2,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Review financial report"
+        },
+        {
+          "cell": "E2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B2,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "F2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B2,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46279
+        },
+        {
+          "cell": "G2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B2,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Finance source stale"
+        },
+        {
+          "cell": "H2",
+          "formula": "=IF(B2=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B2,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 235
+        },
+        {
+          "cell": "I2",
+          "formula": "=IF(B2=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B2,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B3",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A3),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-006"
+        },
+        {
+          "cell": "C3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B3,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "D3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B3,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Submit quarterly report"
+        },
+        {
+          "cell": "E3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B3,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "F3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B3,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46282
+        },
+        {
+          "cell": "G3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B3,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "External deadline"
+        },
+        {
+          "cell": "H3",
+          "formula": "=IF(B3=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B3,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 220
+        },
+        {
+          "cell": "I3",
+          "formula": "=IF(B3=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B3,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B4",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A4),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-003"
+        },
+        {
+          "cell": "C4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B4,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "D4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B4,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Draft narrative report"
+        },
+        {
+          "cell": "E4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B4,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "F4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B4,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46278
+        },
+        {
+          "cell": "G4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B4,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Blocked by program data"
+        },
+        {
+          "cell": "H4",
+          "formula": "=IF(B4=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B4,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 195
+        },
+        {
+          "cell": "I4",
+          "formula": "=IF(B4=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B4,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B5",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A5),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-008"
+        },
+        {
+          "cell": "C5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B5,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Family Stabilization Grant"
+        },
+        {
+          "cell": "D5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B5,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Review deliverable trajectory"
+        },
+        {
+          "cell": "E5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B5,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "F5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B5,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46280
+        },
+        {
+          "cell": "G5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B5,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Current performance below plan"
+        },
+        {
+          "cell": "H5",
+          "formula": "=IF(B5=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B5,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 180
+        },
+        {
+          "cell": "I5",
+          "formula": "=IF(B5=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B5,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B6",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A6),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-005"
+        },
+        {
+          "cell": "C6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B6,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Capacity Building Grant"
+        },
+        {
+          "cell": "D6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B6,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Make renewal go/no-go decision"
+        },
+        {
+          "cell": "E6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B6,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Executive Director"
+        },
+        {
+          "cell": "F6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B6,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46281
+        },
+        {
+          "cell": "G6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B6,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Leadership decision needed"
+        },
+        {
+          "cell": "H6",
+          "formula": "=IF(B6=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B6,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 150
+        },
+        {
+          "cell": "I6",
+          "formula": "=IF(B6=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B6,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B7",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A7),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-002"
+        },
+        {
+          "cell": "C7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B7,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "D7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B7,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Obtain current finance data"
+        },
+        {
+          "cell": "E7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B7,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Finance Lead"
+        },
+        {
+          "cell": "F7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B7,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46276
+        },
+        {
+          "cell": "G7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B7,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Required for report"
+        },
+        {
+          "cell": "H7",
+          "formula": "=IF(B7=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B7,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 135
+        },
+        {
+          "cell": "I7",
+          "formula": "=IF(B7=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B7,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Monitor owner / escalate by rule"
+        },
+        {
+          "cell": "B8",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A8),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-001"
+        },
+        {
+          "cell": "C8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B8,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "D8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B8,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Obtain participant/program data"
+        },
+        {
+          "cell": "E8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B8,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Program Director"
+        },
+        {
+          "cell": "F8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B8,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46275
+        },
+        {
+          "cell": "G8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B8,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Program data was due yesterday"
+        },
+        {
+          "cell": "H8",
+          "formula": "=IF(B8=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B8,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 135
+        },
+        {
+          "cell": "I8",
+          "formula": "=IF(B8=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B8,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Monitor owner / escalate by rule"
+        },
+        {
+          "cell": "B9",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A9),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": "T-007"
+        },
+        {
+          "cell": "C9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B9,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": "SAMPLE — Family Stabilization Grant"
+        },
+        {
+          "cell": "D9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Refresh participant outcome metric"
+        },
+        {
+          "cell": "E9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "cached_value": "Program Director"
+        },
+        {
+          "cell": "F9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 46303
+        },
+        {
+          "cell": "G9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H9",
+          "formula": "=IF(B9=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B9,Tasks!$A$2:$A$500,0)))",
+          "cached_value": 25
+        },
+        {
+          "cell": "I9",
+          "formula": "=IF(B9=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B9,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": "Monitor owner / escalate by rule"
+        },
+        {
+          "cell": "B10",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A10),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B10,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H10",
+          "formula": "=IF(B10=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B10,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I10",
+          "formula": "=IF(B10=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B10,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B11",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A11),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B11,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H11",
+          "formula": "=IF(B11=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B11,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I11",
+          "formula": "=IF(B11=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B11,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B12",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A12),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B12,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H12",
+          "formula": "=IF(B12=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B12,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I12",
+          "formula": "=IF(B12=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B12,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B13",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A13),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B13,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H13",
+          "formula": "=IF(B13=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B13,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I13",
+          "formula": "=IF(B13=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B13,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B14",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A14),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B14,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H14",
+          "formula": "=IF(B14=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B14,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I14",
+          "formula": "=IF(B14=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B14,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B15",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A15),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B15,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H15",
+          "formula": "=IF(B15=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B15,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I15",
+          "formula": "=IF(B15=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B15,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B16",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A16),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B16,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H16",
+          "formula": "=IF(B16=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B16,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I16",
+          "formula": "=IF(B16=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B16,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B17",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A17),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B17,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H17",
+          "formula": "=IF(B17=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B17,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I17",
+          "formula": "=IF(B17=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B17,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B18",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A18),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B18,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H18",
+          "formula": "=IF(B18=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B18,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I18",
+          "formula": "=IF(B18=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B18,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B19",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A19),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B19,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H19",
+          "formula": "=IF(B19=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B19,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I19",
+          "formula": "=IF(B19=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B19,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B20",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A20),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B20,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H20",
+          "formula": "=IF(B20=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B20,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I20",
+          "formula": "=IF(B20=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B20,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        },
+        {
+          "cell": "B21",
+          "formula": "=IFERROR(INDEX(Tasks!$A$2:$A$500,MATCH(LARGE(Tasks!$R$2:$R$500,A21),Tasks!$R$2:$R$500,0)),\"\")",
+          "cached_value": null
+        },
+        {
+          "cell": "C21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Grants!$B$2:$B$500,MATCH(INDEX(Tasks!$B$2:$B$500,MATCH(B21,Tasks!$A$2:$A$500,0)),Grants!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "D21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Tasks!$D$2:$D$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "E21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Tasks!$E$2:$E$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "F21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Tasks!$F$2:$F$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "G21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Tasks!$P$2:$P$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "H21",
+          "formula": "=IF(B21=\"\",\"\",INDEX(Tasks!$Q$2:$Q$500,MATCH(B21,Tasks!$A$2:$A$500,0)))",
+          "cached_value": null
+        },
+        {
+          "cell": "I21",
+          "formula": "=IF(B21=\"\",\"\",IF(INDEX(Tasks!$M$2:$M$500,MATCH(B21,Tasks!$A$2:$A$500,0))=\"Yes\",\"Review / act\",\"Monitor owner / escalate by rule\"))",
+          "cached_value": null
+        }
+      ],
+      "freeze_panes": null,
+      "merged_ranges": [],
+      "column_widths": {
+        "A": 8.0,
+        "B": 12.0,
+        "C": 34.0,
+        "D": 36.0,
+        "E": 20.0,
+        "F": 13.0,
+        "G": 40.0,
+        "H": 12.0,
+        "I": 26.0
+      },
+      "fill_colors": [
+        "FF4A5A46",
+        "00000000"
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "headers": [
+        "GRANT MANAGEMENT — ACTION DASHBOARD",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "row_count": 22,
+      "rows": [
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "What needs my attention now, and can I trust that everything else is being tracked?"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Portfolio Signal"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Active grants"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Open issues"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Critical action items"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Unknown/stale financials"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "TOP ACTIONS"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Rank"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 1
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 2
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 3
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 4
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 5
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": 6
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "CONFIDENCE STATEMENT"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Attention remains required. Review the ranked queue and UNKNOWN/stale data before relying on the portfolio as fully current."
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Health Dimension"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Deadline Health"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Deliverable Health"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Financial Health"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Compliance Health"
+        },
+        {
+          "GRANT MANAGEMENT — ACTION DASHBOARD": "Data Confidence"
+        }
+      ],
+      "formulas": [
+        {
+          "cell": "B7",
+          "formula": "=COUNTIF(Grants!N2:N500,\"Active\")",
+          "cached_value": 3
+        },
+        {
+          "cell": "B8",
+          "formula": "=COUNTIF(Issues!J2:J500,\"Open\")",
+          "cached_value": 4
+        },
+        {
+          "cell": "B9",
+          "formula": "=COUNTIF(Tasks!Q2:Q500,\">=\"&Config!B3)",
+          "cached_value": 5
+        },
+        {
+          "cell": "B10",
+          "formula": "=COUNTIF(Financials!J2:J500,\"UNKNOWN\")",
+          "cached_value": 1
+        },
+        {
+          "cell": "B14",
+          "formula": "=ActionQueue!C2",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "C14",
+          "formula": "=ActionQueue!D2",
+          "cached_value": "Review financial report"
+        },
+        {
+          "cell": "D14",
+          "formula": "=ActionQueue!E2",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "E14",
+          "formula": "=ActionQueue!F2",
+          "cached_value": "2026-09-14T00:00:00"
+        },
+        {
+          "cell": "F14",
+          "formula": "=ActionQueue!G2",
+          "cached_value": "Finance source stale"
+        },
+        {
+          "cell": "G14",
+          "formula": "=ActionQueue!H2",
+          "cached_value": 235
+        },
+        {
+          "cell": "H14",
+          "formula": "=ActionQueue!I2",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B15",
+          "formula": "=ActionQueue!C3",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "C15",
+          "formula": "=ActionQueue!D3",
+          "cached_value": "Submit quarterly report"
+        },
+        {
+          "cell": "D15",
+          "formula": "=ActionQueue!E3",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "E15",
+          "formula": "=ActionQueue!F3",
+          "cached_value": "2026-09-17T00:00:00"
+        },
+        {
+          "cell": "F15",
+          "formula": "=ActionQueue!G3",
+          "cached_value": "External deadline"
+        },
+        {
+          "cell": "G15",
+          "formula": "=ActionQueue!H3",
+          "cached_value": 220
+        },
+        {
+          "cell": "H15",
+          "formula": "=ActionQueue!I3",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B16",
+          "formula": "=ActionQueue!C4",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "C16",
+          "formula": "=ActionQueue!D4",
+          "cached_value": "Draft narrative report"
+        },
+        {
+          "cell": "D16",
+          "formula": "=ActionQueue!E4",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "E16",
+          "formula": "=ActionQueue!F4",
+          "cached_value": "2026-09-13T00:00:00"
+        },
+        {
+          "cell": "F16",
+          "formula": "=ActionQueue!G4",
+          "cached_value": "Blocked by program data"
+        },
+        {
+          "cell": "G16",
+          "formula": "=ActionQueue!H4",
+          "cached_value": 195
+        },
+        {
+          "cell": "H16",
+          "formula": "=ActionQueue!I4",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B17",
+          "formula": "=ActionQueue!C5",
+          "cached_value": "SAMPLE — Family Stabilization Grant"
+        },
+        {
+          "cell": "C17",
+          "formula": "=ActionQueue!D5",
+          "cached_value": "Review deliverable trajectory"
+        },
+        {
+          "cell": "D17",
+          "formula": "=ActionQueue!E5",
+          "cached_value": "Associate Director"
+        },
+        {
+          "cell": "E17",
+          "formula": "=ActionQueue!F5",
+          "cached_value": "2026-09-15T00:00:00"
+        },
+        {
+          "cell": "F17",
+          "formula": "=ActionQueue!G5",
+          "cached_value": "Current performance below plan"
+        },
+        {
+          "cell": "G17",
+          "formula": "=ActionQueue!H5",
+          "cached_value": 180
+        },
+        {
+          "cell": "H17",
+          "formula": "=ActionQueue!I5",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B18",
+          "formula": "=ActionQueue!C6",
+          "cached_value": "SAMPLE — Capacity Building Grant"
+        },
+        {
+          "cell": "C18",
+          "formula": "=ActionQueue!D6",
+          "cached_value": "Make renewal go/no-go decision"
+        },
+        {
+          "cell": "D18",
+          "formula": "=ActionQueue!E6",
+          "cached_value": "Executive Director"
+        },
+        {
+          "cell": "E18",
+          "formula": "=ActionQueue!F6",
+          "cached_value": "2026-09-16T00:00:00"
+        },
+        {
+          "cell": "F18",
+          "formula": "=ActionQueue!G6",
+          "cached_value": "Leadership decision needed"
+        },
+        {
+          "cell": "G18",
+          "formula": "=ActionQueue!H6",
+          "cached_value": 150
+        },
+        {
+          "cell": "H18",
+          "formula": "=ActionQueue!I6",
+          "cached_value": "Review / act"
+        },
+        {
+          "cell": "B19",
+          "formula": "=ActionQueue!C7",
+          "cached_value": "SAMPLE — Community Services Grant"
+        },
+        {
+          "cell": "C19",
+          "formula": "=ActionQueue!D7",
+          "cached_value": "Obtain current finance data"
+        },
+        {
+          "cell": "D19",
+          "formula": "=ActionQueue!E7",
+          "cached_value": "Finance Lead"
+        },
+        {
+          "cell": "E19",
+          "formula": "=ActionQueue!F7",
+          "cached_value": "2026-09-11T00:00:00"
+        },
+        {
+          "cell": "F19",
+          "formula": "=ActionQueue!G7",
+          "cached_value": "Required for report"
+        },
+        {
+          "cell": "G19",
+          "formula": "=ActionQueue!H7",
+          "cached_value": 135
+        },
+        {
+          "cell": "H19",
+          "formula": "=ActionQueue!I7",
+          "cached_value": "Monitor owner / escalate by rule"
+        },
+        {
+          "cell": "A22",
+          "formula": "=IF(B9+B10=0,\"Nothing else currently requires your attention based on tracked data.\",\"Attention remains required. Review the ranked queue and UNKNOWN/stale data before relying on the portfolio as fully current.\")",
+          "cached_value": "Attention remains required. Review the ranked queue and UNKNOWN/stale data before relying on the portfolio as fully current."
+        }
+      ],
+      "freeze_panes": null,
+      "merged_ranges": [
+        "A12:H12",
+        "A4:H4",
+        "A21:H21",
+        "D6:H6",
+        "A22:H24",
+        "A1:H2"
+      ],
+      "column_widths": {
+        "A": 18.0,
+        "B": 30.0,
+        "C": 34.0,
+        "D": 20.0,
+        "E": 14.0,
+        "F": 42.0,
+        "G": 12.0,
+        "H": 24.0
+      },
+      "fill_colors": [
+        "FF2F3A31",
+        "00000000",
+        "FFD9DED5",
+        "FF4A5A46",
+        "FFDDD7E7",
+        "FFE8D7BC"
+      ]
+    }
+  ]
+}
