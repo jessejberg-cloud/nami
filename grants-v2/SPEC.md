@@ -56,7 +56,7 @@ Status is a dropdown on every record; change any direction anytime, including ou
 
 | Tile | Shows |
 |---|---|
-| Needs attention | Past due date and due in the next 14 days, across everything |
+| Needs attention | Past their date and due in the next 14 days, across everything, in a calm accent with an icon and plain words |
 | Pipeline | Counts and short lists per status; ring or bar per status |
 | To-do | Tasks, upcoming deadlines, past-end-date flags, Watch reviews; "My to-do" filter; progress per task |
 | Awards | Totals by year with a toggle: Award year (full amount in the year awarded) / Spread (split across the years covered, even split, editable); compare to last year |
@@ -89,7 +89,7 @@ Default: time period (year or custom range), status, program, funder, grant type
 
 ## Design
 
-- Apply `docs/adhd-design-guide.md` to every screen. Where it and the source plan disagree, see open point 1.
+- Apply `docs/adhd-design-guide.md` to every screen. Where it and the source plan disagree, the guide wins unless Decided below says otherwise.
 - NAMI SEWI brand colors from namisoutheastwi.org, muted where possible; clean cards, white space, large readable text.
 - One color per status, always with an icon and a word.
 - Progress rings and simple bars where they help, filling forward; no dense tables on the main page.
@@ -128,13 +128,16 @@ Document uploads; CRM sync; email reminders (possible later via Power Automate);
 
 Free Netlify account owned by NAMI, Jesse added. App registered in NAMI's Microsoft 365 (Emily or Nicole approves). Lists created on their SharePoint; ChatGPT test data imported as CSV at the setup visit.
 
+## Decided
+
+- **Urgency look and words (Nov 1, Jesse).** No red and no "overdue" or "deadline". Items that are due soon or past their date show a calm accent color, an icon and plain words ("Past due date", "Due this week"), and sort to the top of each tile.
+
 ## Open points (Jesse's call, one at a time)
 
-1. **Urgency look and words.** The source plan says urgent = red + icon + words and "Overdue". The ADHD design guide and the suite's design law say no red, no "overdue" or "deadline", no counting backward. Recommended: a calm accent + icon + plain words ("Past due date", "Due this week"), sorted to the top.
-2. **Required fields.** D10 requires Name, Funder, Status, Owner; the guide says nothing is required. Recommended: Name only, with Status defaulting to Potentials and Owner to the person adding it.
-3. **Active.** Stored as a status, or computed from Awarded + today within dates (T4)? Recommended: store Awarded, show Active or Ended automatically.
-4. **Hosting** is Netlify (D27); STATUS.md still says Cloudflare for phase two. Recommended: Netlify, and update STATUS.md.
-5. **Grant Radar and the live ChatGPT Dashboard** keep running until v2 launches.
+1. **Required fields.** D10 requires Name, Funder, Status, Owner; the guide says nothing is required. Recommended: Name only, with Status defaulting to Potentials and Owner to the person adding it.
+2. **Active.** Stored as a status, or computed from Awarded + today within dates (T4)? Recommended: store Awarded, show Active or Ended automatically.
+3. **Hosting** is Netlify (D27); STATUS.md still says Cloudflare for phase two. Recommended: Netlify, and update STATUS.md.
+4. **Grant Radar and the live ChatGPT Dashboard** keep running until v2 launches.
 
 ## Early tests (not yet run)
 
