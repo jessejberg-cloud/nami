@@ -6,7 +6,8 @@
 
   "Partner foundation news" is a feed link that will not load (example.org has no feed), so
   Phase 6 can show its "not loading" note. "Warmline Volunteer Training" carries a custom
-  column (boardMeeting) for Phase 4.
+  column (boardMeeting); three records carry the custom choice column reportCadence, and two
+  the yes-or-no column boardApproved, so their filters have something to find.
 
   Dates are fixed the first time the sample loads in a browser and kept after that, so edits
   survive; "Start the sample over" rebuilds them around the new today.
@@ -39,10 +40,10 @@
     };
 
     var records = [
-      row({ name: 'Family Education Expansion', funder: 'Lakeshore Community Fund (sample)', recordType: 'Grant', grantType: 'Foundation', program: 'Family-to-Family', owner: people.morgan, status: 'Awarded', awardAmount: 45000, startDate: ymd(Y, 1, 1), endDate: ymd(Y, 12, 31), contactName: 'Renee Alvarez (sample)', contactEmail: 'renee@example.org', contactPhone: '414-555-0141', next: 'How many families finished the full eight sessions', comments: 'Funder likes a short story with each report.', links: 'https://example.org/lakeshore-guidelines', folderLink: 'https://example.sharepoint.com/sites/grants/Lakeshore' }),
-      row({ name: 'Peer Support Line', funder: 'Lakeview County Human Services (sample)', recordType: 'County contract', grantType: 'County', program: 'Peer-to-Peer', owner: people.dana, status: 'Awarded', awardAmount: 120000, startDate: ymd(Y - 1, 7, 1), endDate: ymd(Y + 1, 6, 30), contactName: 'Contract office (sample)', contactEmail: 'contracts@example.gov', next: 'Monthly call counts and hours staffed', folderLink: 'https://example.sharepoint.com/sites/grants/County-Peer-Line' }),
+      row({ name: 'Family Education Expansion', funder: 'Lakeshore Community Fund (sample)', recordType: 'Grant', grantType: 'Foundation', program: 'Family-to-Family', owner: people.morgan, status: 'Awarded', awardAmount: 45000, startDate: ymd(Y, 1, 1), endDate: ymd(Y, 12, 31), contactName: 'Renee Alvarez (sample)', contactEmail: 'renee@example.org', contactPhone: '414-555-0141', next: 'How many families finished the full eight sessions', comments: 'Funder likes a short story with each report.', links: 'https://example.org/lakeshore-guidelines', folderLink: 'https://example.sharepoint.com/sites/grants/Lakeshore', reportCadence: 'Every 6 months', boardApproved: true }),
+      row({ name: 'Peer Support Line', funder: 'Lakeview County Human Services (sample)', recordType: 'County contract', grantType: 'County', program: 'Peer-to-Peer', owner: people.dana, status: 'Awarded', awardAmount: 120000, startDate: ymd(Y - 1, 7, 1), endDate: ymd(Y + 1, 6, 30), contactName: 'Contract office (sample)', contactEmail: 'contracts@example.gov', next: 'Monthly call counts and hours staffed', folderLink: 'https://example.sharepoint.com/sites/grants/County-Peer-Line', reportCadence: 'Monthly', boardApproved: true }),
       row({ name: 'Crisis Response Training', funder: 'Brookfield Hills County (sample)', recordType: 'County contract', grantType: 'County', program: 'Crisis education', owner: people.dana, status: 'Awarded', awardAmount: 36000, startDate: ymd(Y - 2, 3, 1), endDate: d(-20), next: 'Final attendance list', comments: 'Irregular payments; see award years.' }),
-      row({ name: 'School Outreach Pilot', funder: 'Bright Path Foundation (sample)', recordType: 'Grant', grantType: 'Foundation', program: 'Ending the Silence', owner: people.sam, status: 'Awarded', awardAmount: 60000, startDate: ymd(Y, 9, 1), endDate: ymd(Y + 2, 8, 31), contactName: 'Jordan Pike (sample)', contactEmail: 'jordan@example.org', next: 'Schools reached each semester', watchDate: d(200), watchNote: 'Renewal conversation before year two' }),
+      row({ name: 'School Outreach Pilot', funder: 'Bright Path Foundation (sample)', recordType: 'Grant', grantType: 'Foundation', program: 'Ending the Silence', owner: people.sam, status: 'Awarded', awardAmount: 60000, startDate: ymd(Y, 9, 1), endDate: ymd(Y + 2, 8, 31), contactName: 'Jordan Pike (sample)', contactEmail: 'jordan@example.org', next: 'Schools reached each semester', reportCadence: 'Yearly', watchDate: d(200), watchNote: 'Renewal conversation before year two' }),
       row({ name: 'Warmline Volunteer Training', funder: 'Oak Street Fund (sample)', recordType: 'Grant', grantType: 'Foundation', program: 'Support groups', owner: people.lee, status: 'Awarded', awardAmount: 20000, startDate: d(40), endDate: d(400), next: 'Training dates once set', boardMeeting: 'Report at the next board meeting' }),
       row({ name: 'Support Group Facilitator Stipends', funder: 'Harbor Health Partners (sample)', recordType: 'Grant', grantType: 'Corporate', program: 'Support groups', owner: people.morgan, status: 'Applied', awardAmount: 15000, deadline: d(-30), next: 'Decision expected in about 6 weeks' }),
       row({ name: 'Peer Workforce Subaward', funder: 'State health department (sample)', recordType: 'Grant', grantType: 'State', program: 'Peer-to-Peer', owner: people.lee, status: 'Upcoming', awardAmount: 80000, deadline: d(9), next: 'Letters of support from two county partners' }),
@@ -120,7 +121,8 @@
       row({ key: 'defaultAwardView', value: 'Award year' }),
       row({ key: 'dueSoonDays', value: '14' }),
       row({ key: 'filters', value: 'time period; status; program; funder; grant type; owner; record type; apply-by range' }),
-      row({ key: 'customColumns', value: 'boardMeeting|Board meeting|text' }),
+      row({ key: 'customColumns', value: 'boardMeeting|Board meeting|text||on; reportCadence|Report cadence|choice|Monthly, Every 6 months, Yearly|on; boardApproved|Board approved|yesno||on' }),
+      row({ key: 'showStatusNotes', value: 'yes' }),
       row({ key: 'grantsGovKeywords', value: 'mental health; peer support; crisis; suicide prevention; family support' })
     ];
 

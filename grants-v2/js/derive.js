@@ -64,7 +64,8 @@
   function multiYear(r) { return years(r).length > 1; }
 
   // ---------- filters ----------
-  // filters: { year, from, to, status, program, funder, grantType, owner, recordType, applyFrom, applyTo }
+  // filters: { year, from, to, status, program, funder, grantType, owner, recordType, applyFrom, applyTo,
+  //            and for custom columns c.<key>, y.<key>, d.<key>.from, d.<key>.to }
   // Empty values mean "any". year is a calendar year; from/to a custom range. A record shows in
   // every year it is active; a record with no dates at all is matched by its apply-by date.
   // The dates a record covers: from the earliest of its apply-by and start dates to the latest
@@ -96,6 +97,25 @@
       if (!r.deadline) return false;
       if (f.applyFrom && r.deadline < f.applyFrom) return false;
       if (f.applyTo && r.deadline > f.applyTo) return false;
+    }
+    return customPasses(r, f);
+  }
+
+  // Custom columns: c.<key> a choice, y.<key> Yes or No, d.<key>.from and d.<key>.to a date range
+  function isYes(v) { return v === true || /^(yes|true|1)$/i.test(String(v || '')); }
+  function customPasses(r, f) {
+    var keys = Object.keys(f);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i], want = f[k], m;
+      if (!want) continue;
+      if ((m = /^c\.(\w+)$/.exec(k))) { if (String(r[m[1]] || '') !== want) return false; }
+      else if ((m = /^y\.(\w+)$/.exec(k))) { if (isYes(r[m[1]]) !== (want === 'Yes')) return false; }
+      else if ((m = /^d\.(\w+)\.(from|to)$/.exec(k))) {
+        var v = r[m[1]];
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v || ''))) return false; // not a date (the field may have been text once)
+        if (m[2] === 'from' && v < want) return false;
+        if (m[2] === 'to' && v > want) return false;
+      }
     }
     return true;
   }
@@ -141,7 +161,7 @@
     return out;
   }
 
-  var api = { shown: shown, tags: tags, years: years, multiYear: multiYear, passes: passes, inPeriod: inPeriod, isAward: isAward, awardShares: awardShares, awardsByYear: awardsByYear, iso: iso, addDays: addDays, DUE_SOON_DAYS: DUE_SOON_DAYS };
+  var api = { isYes: isYes, shown: shown, tags: tags, years: years, multiYear: multiYear, passes: passes, inPeriod: inPeriod, isAward: isAward, awardShares: awardShares, awardsByYear: awardsByYear, iso: iso, addDays: addDays, DUE_SOON_DAYS: DUE_SOON_DAYS };
   root.NAMI = root.NAMI || {};
   root.NAMI.derive = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -1,6 +1,9 @@
 /*
   NAMI Grants Dashboard v2: the page.
 
+  Phase 4: every title, status, field, section and filter name comes from the Labels list (T);
+  custom fields from Settings show under More details and get a filter; tiles collapse, move by
+  press and hold (or arrow keys on their handle), and the layout is kept per person.
   Phase 3 home: Needs attention, To-do (with My to-do), Pipeline, Awards (Award year or
   Spread, this year beside last year, and the awards sheet), County contracts and Archive,
   all narrowed by the filters. "Show all" and Search open a full list.
@@ -11,7 +14,7 @@
   'use strict';
 
   var N = window.NAMI;
-  var schema = N.schema, derive = N.derive;
+  var schema = N.schema, derive = N.derive, S = N.settings;
   var store = N.data.createSampleStore({ storage: window.localStorage });
   var ME = 'Morgan Reyes (sample)'; // who is "me" in Sample mode; sign-in replaces this in Phase 5
 
@@ -41,7 +44,21 @@
     return e;
   }
 
-  function label(colKey) { var c = schema.column('records', colKey); return c ? c.label : colKey; }
+  // ---------- names: the Labels list wins over the built-in words ----------
+  var T = S.makeLabels([]);
+  function refreshLabels() { T = S.makeLabels(store.items('labels')); }
+  function label(colKey) {
+    var c = schema.column('records', colKey);
+    if (c) return T('field.' + colKey, c.label);
+    var cc = customCols().filter(function (x) { return x.key === colKey; })[0];
+    return cc ? cc.label : colKey;
+  }
+  function statusName(s) { return T('status.' + s, s); }
+  function noteHidden(s) { return settingList('hiddenStatusNotes').indexOf(s) !== -1; }
+  function statusNote(s) { return noteHidden(s) ? '' : T('statusNote.' + s, schema.STATUS_NOTES[s] || ''); }
+  function tileName(k) { var t = S.TILES.filter(function (x) { return x.key === k; })[0]; return T('tile.' + k, t ? t.text : k); }
+  function sectionName(k) { var t = S.SECTIONS.filter(function (x) { return x.key === k; })[0]; return T('section.' + k, t ? t.text : k); }
+  function customCols() { return S.parseCustom(setting('customColumns')); }
 
   function setting(key) {
     var row = store.items('settings').filter(function (s) { return s.key === key; })[0];
@@ -86,7 +103,9 @@
     Archived: 'M2.5 4h11v2.5h-11zM3.5 6.5v6h9v-6M6.5 9h3',
     attention: 'M8 3a5 5 0 1 0 0 10A5 5 0 0 0 8 3ZM8 5.5V8l1.8 1.2',
     plain: 'M3 8h10',
-    check: 'M3.5 8.5 6.5 11.5 12.5 4.5'
+    check: 'M3.5 8.5 6.5 11.5 12.5 4.5',
+    chevron: 'M5 6.5 8 9.5 11 6.5',
+    grip: 'M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01'
   };
   function icon(name) {
     var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -98,10 +117,16 @@
   }
 
   function chip(status) {
-    return el('span', { class: 'chip s-' + status }, [icon(status), status]);
+    return el('span', { class: 'chip s-' + status }, [icon(status), statusName(status)]);
   }
 
-  function tagEl(t) { return el('span', { class: 'tag t-' + t.tone }, [icon(t.tone), t.text]); }
+  // Notes that name a field follow that field's name when it is renamed
+  function tagText(t) {
+    if (t.key === 'applyPassed' && label('deadline') !== 'Apply by') return label('deadline') + ' date passed';
+    if (t.key === 'pastEnd') return 'Past ' + label('endDate').toLowerCase();
+    return t.text;
+  }
+  function tagEl(t) { return el('span', { class: 'tag t-' + t.tone }, [icon(t.tone), tagText(t)]); }
 
   // ---------- Undo ----------
 
@@ -139,15 +164,7 @@
   // ---------- filters ----------
 
   var FILTER_KEY = 'nami-grants-v2-filters';
-  var FILTERS = [
-    { key: 'year', label: 'Year' },
-    { key: 'status', label: 'Status' },
-    { key: 'program', label: 'Program' },
-    { key: 'funder', label: 'Funder' },
-    { key: 'grantType', label: 'Grant type' },
-    { key: 'owner', label: 'Owner' },
-    { key: 'recordType', label: 'Record type' }
-  ];
+  var FILTERS = ['year', 'status', 'program', 'funder', 'grantType', 'owner', 'recordType'];
   state.filters = (function () {
     try { return JSON.parse(window.localStorage.getItem(FILTER_KEY)) || {}; } catch (e) { return {}; }
   })();
@@ -167,6 +184,14 @@
       return Object.keys(ys).sort();
     }
     if (key === 'status') return ['Potentials', 'Upcoming', 'Applied', 'Awarded', 'Active', 'Archived'];
+    var m = /^c\.(\w+)$/.exec(key);
+    if (m) {
+      var col = customCols().filter(function (c) { return c.key === m[1]; })[0];
+      var all = (col ? col.choices : []).slice();
+      distinct(m[1]).forEach(function (v) { if (all.indexOf(v) === -1) all.push(v); });
+      return all;
+    }
+    if (/^y\./.test(key)) return ['Yes', 'No'];
     if (key === 'program') return settingList('programs');
     if (key === 'grantType') return settingList('grantTypes');
     if (key === 'recordType') return schema.column('records', 'recordType').choices;
@@ -176,23 +201,42 @@
   function buildFilterPanel() {
     var panel = $('filterPanel');
     panel.innerHTML = '';
-    FILTERS.forEach(function (f) {
-      var id = 'flt-' + f.key;
-      var sel = el('select', { id: id, 'data-filter': f.key }, [el('option', { value: '', text: 'Any' })]);
-      var choices = filterChoices(f.key);
-      if (state.filters[f.key] && choices.indexOf(state.filters[f.key]) === -1) choices = choices.concat([state.filters[f.key]]);
-      choices.forEach(function (c) { sel.appendChild(el('option', { value: c, text: c })); });
-      sel.value = state.filters[f.key] || '';
-      sel.addEventListener('change', function () { setFilter(f.key, sel.value); });
-      panel.appendChild(el('div', { class: 'field' }, [el('label', { for: id, text: f.label }), sel]));
+    var selects = FILTERS.slice(), dates = ['from', 'to', 'applyFrom', 'applyTo'];
+    // Custom fields of type choice, yes or no, or date get a filter of their own
+    customCols().filter(S.filterable).forEach(function (c) {
+      if (c.type === 'choice') selects.push('c.' + c.key);
+      else if (c.type === 'yesno') selects.push('y.' + c.key);
+      else dates.push('d.' + c.key + '.from', 'd.' + c.key + '.to');
     });
-    [['from', 'From'], ['to', 'To'], ['applyFrom', label('deadline') + ' from'], ['applyTo', label('deadline') + ' to']].forEach(function (p) {
-      var id = 'flt-' + p[0];
-      var inp = el('input', { id: id, type: 'date', 'data-filter': p[0] });
-      inp.value = state.filters[p[0]] || '';
-      inp.addEventListener('change', function () { setFilter(p[0], inp.value); });
-      panel.appendChild(el('div', { class: 'field' }, [el('label', { for: id, text: p[1] }), inp]));
+    selects.forEach(function (key) {
+      var id = 'flt-' + key;
+      var sel = el('select', { id: id, 'data-filter': key }, [el('option', { value: '', text: 'Any' })]);
+      var choices = filterChoices(key);
+      if (state.filters[key] && choices.indexOf(state.filters[key]) === -1) choices = choices.concat([state.filters[key]]);
+      choices.forEach(function (c) { sel.appendChild(el('option', { value: c, text: key === 'status' ? statusName(c) : c })); });
+      sel.value = state.filters[key] || '';
+      sel.addEventListener('change', function () { setFilter(key, sel.value); });
+      panel.appendChild(el('div', { class: 'field' }, [el('label', { for: id, text: filterLabel(key) }), sel]));
     });
+    dates.forEach(function (key) {
+      var id = 'flt-' + key;
+      var inp = el('input', { id: id, type: 'date', 'data-filter': key });
+      inp.value = state.filters[key] || '';
+      inp.addEventListener('change', function () { setFilter(key, inp.value); });
+      panel.appendChild(el('div', { class: 'field' }, [el('label', { for: id, text: filterLabel(key) }), inp]));
+    });
+  }
+
+  // Filters on custom fields that are gone, or whose filter was switched off, stop counting
+  function liveFilters() {
+    var ok = {};
+    customCols().filter(S.filterable).forEach(function (c) { ok[c.key] = c.type; });
+    var out = {};
+    Object.keys(state.filters).forEach(function (k) {
+      var m = /^[cyd]\.(\w+)/.exec(k);
+      if (!m || ok[m[1]] === { c: 'choice', y: 'yesno', d: 'date' }[k.charAt(0)]) out[k] = state.filters[k];
+    });
+    return out;
   }
 
   function setFilter(key, value) {
@@ -200,19 +244,24 @@
     if (key === 'year' && value) { delete state.filters.from; delete state.filters.to; }
     if ((key === 'from' || key === 'to') && value) delete state.filters.year;
     keepFilters();
-    keepFocus(function () { buildFilterPanel(); draw(); });
+    keepFocus(draw);
   }
 
   function filterLabel(key) {
-    var f = FILTERS.filter(function (x) { return x.key === key; })[0];
-    if (f) return f.label;
-    return { from: 'From', to: 'To', applyFrom: label('deadline') + ' from', applyTo: label('deadline') + ' to' }[key] || key;
+    if (key === 'year' || key === 'from' || key === 'to') return T('filter.' + key, { year: 'Year', from: 'From', to: 'To' }[key]);
+    if (key === 'applyFrom') return label('deadline') + ' from';
+    if (key === 'applyTo') return label('deadline') + ' to';
+    var m = /^[cy]\.(\w+)$/.exec(key);
+    if (m) return label(m[1]);
+    m = /^d\.(\w+)\.(from|to)$/.exec(key);
+    if (m) return label(m[1]) + ' ' + m[2];
+    return label(key);
   }
 
   function renderFilterChips() {
     var box = $('filterChips');
     box.innerHTML = '';
-    var keys = Object.keys(state.filters);
+    var keys = Object.keys(liveFilters());
     $('filtersBtn').textContent = 'Filters';
     box.hidden = !keys.length;
     keys.forEach(function (k) {
@@ -221,13 +270,13 @@
         setFilter(k, '');
         toast(filterLabel(k) + ' filter off.', null, { label: 'Undo', run: function () { setFilter(k, v); } });
       } }, [
-        filterLabel(k) + ': ' + (/^\d{4}-\d{2}-\d{2}$/.test(v) ? niceDate(v) : v), el('span', { class: 'x', 'aria-hidden': 'true', text: '×' })
+        filterLabel(k) + ': ' + (/^\d{4}-\d{2}-\d{2}$/.test(v) ? niceDate(v) : k === 'status' ? statusName(v) : v), el('span', { class: 'x', 'aria-hidden': 'true', text: '×' })
       ]));
     });
     if (keys.length) box.appendChild(el('button', { type: 'button', class: 'link', text: 'Clear filters', onclick: function () {
       var was = state.filters;
-      state.filters = {}; keepFilters(); buildFilterPanel(); render();
-      toast('Filters cleared.', null, { label: 'Undo', run: function () { state.filters = was; keepFilters(); buildFilterPanel(); render(); } });
+      state.filters = {}; keepFilters(); render();
+      toast('Filters cleared.', null, { label: 'Undo', run: function () { state.filters = was; keepFilters(); render(); } });
     } }));
   }
 
@@ -239,12 +288,13 @@
   });
 
   function filtered(today, f) {
-    f = f || state.filters;
+    f = f || liveFilters();
     return store.items('records').filter(function (r) { return derive.passes(r, f, today) && matches(r, state.query); });
   }
   // Every filter but the time period: the Awards tile shows several years side by side
   function filteredAnyYear(today) {
-    var f = {}; Object.keys(state.filters).forEach(function (k) { if (['year', 'from', 'to'].indexOf(k) === -1) f[k] = state.filters[k]; });
+    var live = liveFilters();
+    var f = {}; Object.keys(live).forEach(function (k) { if (['year', 'from', 'to'].indexOf(k) === -1) f[k] = live[k]; });
     return filtered(today, f);
   }
 
@@ -252,7 +302,8 @@
 
   function matches(r, q) {
     if (!q) return true;
-    var hay = [r.name, r.funder, r.program, r.owner, r.grantType, r.comments, r.next, r.contactName, r.archiveReason].join(' ').toLowerCase();
+    var hay = [r.name, r.funder, r.program, r.owner, r.grantType, r.comments, r.next, r.contactName, r.archiveReason]
+      .concat(customCols().filter(function (c) { return c.type !== 'yesno'; }).map(function (c) { return r[c.key]; })).join(' ').toLowerCase();
     return q.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) !== -1; });
   }
 
@@ -317,7 +368,7 @@
       var these = items.filter(function (r) { return derive.shown(r, today) === st; }).sort(st === 'Archived' ? byName : attentionFirst(today));
       if (!these.length) return;
       any = true;
-      listEl.appendChild(group(st, schema.STATUS_NOTES[st], these, today));
+      listEl.appendChild(group(st, statusNote(st), these, today));
     });
     if (!any) listEl.appendChild(el('p', { class: 'quiet empty', text: '·' }));
   }
@@ -338,16 +389,113 @@
 
   // ---------- the home page: tiles ----------
 
-  function tile(key, title, kids, opts) {
+  // A tile: its title opens and closes it; the handle moves it (press and hold, or arrow keys)
+  function tile(key, kids, opts) {
     opts = opts || {};
-    return el('section', { class: 'tile' + (opts.wide ? ' wide' : ''), 'data-tile': key, 'aria-labelledby': 'tile-' + key }, [
-      el('header', { class: 'tileHead' }, [
-        el('h2', { id: 'tile-' + key, text: title }),
-        opts.head || null
-      ]),
-      el('div', { class: 'tileBody' }, kids),
-      el('p', { class: 'stamp', text: 'Updated ' + clock(store.loadedAt || new Date()) })
+    var name = tileName(key);
+    var shut = !!state.layout.collapsed[key];
+    var head = el('header', { class: 'tileHead' }, [
+      el('h2', {}, [el('button', { type: 'button', class: 'tileToggle', id: 'tile-' + key, 'aria-expanded': String(!shut), onclick: function () { toggleTile(key); } }, [icon('chevron'), name])]),
+      shut ? null : (opts.head || null),
+      el('button', { type: 'button', class: 'handle', 'aria-label': 'Move ' + name, title: 'Press and hold to move', onkeydown: function (e) { moveByKey(e, key); } }, [icon('grip')])
     ]);
+    head.addEventListener('pointerdown', function (e) { holdToMove(e, key); });
+    return el('section', { class: 'tile' + (opts.wide ? ' wide' : '') + (shut ? ' shut' : ''), 'data-tile': key, 'aria-labelledby': 'tile-' + key }, [
+      head,
+      shut ? null : el('div', { class: 'tileBody' + (state.opening === key ? ' opening' : '') }, kids),
+      shut ? null : el('p', { class: 'stamp', text: 'Updated ' + clock(store.loadedAt || new Date()) })
+    ]);
+  }
+
+  // ---------- layout: order and collapsed tiles, kept per person in this browser ----------
+
+  var LAYOUT_KEY = 'nami-grants-v2-layout:' + ME;
+  state.layout = (function () {
+    try { return S.normalLayout(JSON.parse(window.localStorage.getItem(LAYOUT_KEY))); } catch (e) { return S.normalLayout(null); }
+  })();
+  function setLayout(next, note) {
+    var before = state.layout;
+    state.layout = S.normalLayout(next);
+    try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(state.layout)); } catch (e) { /* fine without */ }
+    render();
+    if (note) toast(note, null, { label: 'Undo', run: function () { setLayout(before); } });
+  }
+
+  function toggleTile(key) {
+    var c = Object.assign({}, state.layout.collapsed);
+    state.opening = c[key] ? key : null;
+    if (c[key]) delete c[key]; else c[key] = true;
+    setLayout({ order: state.layout.order, collapsed: c });
+  }
+
+  function moveByKey(e, key) {
+    var by = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
+    if (!by) return;
+    e.preventDefault();
+    var next = S.moveTile(state.layout, key, by);
+    if (next.order.join() !== state.layout.order.join()) setLayout(next, tileName(key) + ' moved.');
+  }
+
+  // Press and hold (on the handle or the tile's heading) lifts a tile; it follows the pointer
+  // and drops where it is let go. A quick tap or a scroll does nothing. Escape puts it back.
+  var HOLD_MS = 350;
+  function holdToMove(e, key) {
+    if (e.button !== 0 || state.view !== 'home') return;
+    var onHandle = !!e.target.closest('.handle');
+    if (!onHandle && e.target.closest('button, input, select, label, a')) return;
+    if (e.pointerType !== 'mouse' && !onHandle) return; // on a phone the heading scrolls; the handle moves
+    var grid = listEl.querySelector('.grid');
+    var me = grid && grid.querySelector('[data-tile=' + key + ']');
+    if (!me) return;
+    var sx = e.clientX, sy = e.clientY, lifted = false;
+    var px = sx, py = sy, frame = null, lastOver = null, travelled = false;
+    var timer = setTimeout(function () { lifted = true; me.classList.add('lifted'); document.body.classList.add('moving'); frame = requestAnimationFrame(edge); }, HOLD_MS);
+    // Near the top or bottom of the window the page scrolls, gently, so a tile can travel far
+    function edge() {
+      if (!lifted) return;
+      var h = window.innerHeight, by = 0;
+      if (!travelled) { frame = requestAnimationFrame(edge); return; } // only once the tile is on its way
+      if (py < 60) by = -Math.ceil((60 - py) / 6);
+      else if (py > h - 60) by = Math.ceil((py - (h - 60)) / 6);
+      if (by) { window.scrollBy(0, by); place(); }
+      frame = requestAnimationFrame(edge);
+    }
+    function move(ev) {
+      if (!lifted) { if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 10) stop(false); return; }
+      ev.preventDefault();
+      px = ev.clientX; py = ev.clientY;
+      if (Math.abs(px - sx) + Math.abs(py - sy) > 10) travelled = true;
+      place();
+    }
+    function place() {
+      var over = document.elementFromPoint(px, py);
+      var t = over && over.closest('[data-tile]');
+      if (!t || t === me || t.parentNode !== grid) { lastOver = null; return; }
+      if (t === lastOver) return; // one move per tile entered, so tiles of different sizes do not flicker
+      lastOver = t;
+      if (me.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING) grid.insertBefore(me, t.nextSibling);
+      else grid.insertBefore(me, t);
+    }
+    function key_(ev) { if (ev.key === 'Escape') stop(true); }
+    function up() { stop(false); }
+    function stop(cancel) {
+      clearTimeout(timer);
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      window.removeEventListener('keydown', key_);
+      if (!lifted) return;
+      lifted = false;
+      me.classList.remove('lifted'); document.body.classList.remove('moving');
+      var order = Array.prototype.map.call(grid.querySelectorAll(':scope > [data-tile]'), function (t) { return t.getAttribute('data-tile'); });
+      if (cancel || order.join() === state.layout.order.join()) { render(); return; }
+      setLayout({ order: order, collapsed: state.layout.collapsed }, tileName(key) + ' moved.');
+    }
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    window.addEventListener('keydown', key_);
   }
 
   function dueDays() { return Number(setting('dueSoonDays')) || derive.DUE_SOON_DAYS; }
@@ -377,12 +525,12 @@
     recs.forEach(function (r) {
       if (mineOnly && r.owner !== ME) return;
       if ((r.status === 'Upcoming' || r.status === 'Potentials') && r.deadline) {
-        var note = r.deadline < t ? 'Apply-by date passed' : r.deadline <= soon ? 'Due soon' : '';
+        var note = r.deadline < t ? tagText({ key: 'applyPassed', text: 'Apply-by date passed' }) : r.deadline <= soon ? 'Due soon' : '';
         // Potentials only come up once their apply-by date is near, so To-do stays short
         if (r.status === 'Upcoming' || note) items.push({ kind: 'apply', date: r.deadline, title: label('deadline') + ': ' + r.name, record: r, note: note });
       }
       if (r.status === 'Awarded' && r.endDate && r.endDate < t) {
-        items.push({ kind: 'ended', date: r.endDate, title: r.name, record: r, note: 'Past end date' });
+        items.push({ kind: 'ended', date: r.endDate, title: r.name, record: r, note: tagText({ key: 'pastEnd' }) });
       }
     });
     items.sort(function (a, b) {
@@ -427,22 +575,23 @@
     var recs = filtered(today);
     var active = recs.filter(function (r) { return r.status !== 'Archived'; });
     var grid = el('div', { class: 'grid' });
+    var tiles = {};
 
     // Needs attention: anything past its date or due within the due-soon window, across everything
     var attention = todoItems(today, recs, false).filter(function (it) { return it.note; });
     var attBody = attention.length ? el('ul', { class: 'todos' }) : el('p', { class: 'quiet empty', text: '·' });
     attention.slice(0, state.expanded.attention ? 99 : 6).forEach(function (it) { attBody.appendChild(todoRow(it)); });
-    grid.appendChild(tile('attention', 'Needs attention', [attBody,
+    tiles.attention = (tile('attention', [attBody,
       attention.length > 6 && !state.expanded.attention ? more('Show all', function () { state.expanded.attention = true; render(); }) : null]));
 
     // To-do: what is coming up and not already in Needs attention; My to-do shows all of mine
     var todos = todoItems(today, recs, state.myTodo).filter(function (it) { return state.myTodo || !it.note; });
     var todoBody = todos.length ? el('ul', { class: 'todos' }) : el('p', { class: 'quiet empty', text: '·' });
     todos.slice(0, state.expanded.todo ? 99 : 6).forEach(function (it) { todoBody.appendChild(todoRow(it)); });
-    var mine = el('label', { class: 'toggle' }, [el('input', { type: 'checkbox', id: 'myTodo' }), 'My to-do']);
+    var mine = el('label', { class: 'toggle' }, [el('input', { type: 'checkbox', id: 'myTodo' }), T('filter.myTodo', 'My to-do')]);
     mine.firstChild.checked = !!state.myTodo;
     mine.firstChild.addEventListener('change', function (e) { state.myTodo = e.target.checked; keepChoices(); render(); });
-    grid.appendChild(tile('todo', 'To-do', [todoBody,
+    tiles.todo = (tile('todo', [todoBody,
       todos.length > 6 && !state.expanded.todo ? more('Show all', function () { state.expanded.todo = true; render(); }) : null], { head: mine }));
 
     // Pipeline: a count, a bar and a short list per status
@@ -454,27 +603,27 @@
       var col = el('div', { class: 'stage' }, [
         el('div', { class: 'stageHead' }, [chip(st), el('span', { class: 'count', text: String(these.length) })]),
         el('div', { class: 'meter' }, [el('span', { class: 'fill s-' + st, style: 'width:' + Math.round(these.length / biggest * 100) + '%' })]),
-        el('p', { class: 'note', text: '(' + schema.STATUS_NOTES[st] + ')' })
+        statusNote(st) ? el('p', { class: 'note', text: '(' + statusNote(st) + ')' }) : null
       ]);
       var ul = el('ul', { class: 'mini' });
       these.slice(0, 3).forEach(function (r) { ul.appendChild(el('li', {}, [el('button', { type: 'button', class: 'link', text: r.name, onclick: function () { openDetail(r.id); } })])); });
       if (these.length) col.appendChild(ul);
-      if (these.length > 3) col.appendChild(more('Show all', function () { showList(st, function (r) { return derive.shown(r, today) === st && r.status !== 'Archived'; }, [st]); }));
+      if (these.length > 3) col.appendChild(more('Show all', function () { showList(statusName(st), function (r) { return derive.shown(r, today) === st && r.status !== 'Archived'; }, [st]); }));
       pipe.appendChild(col);
     });
-    grid.appendChild(tile('pipeline', 'Pipeline', [pipe], { wide: true }));
+    tiles.pipeline = (tile('pipeline', [pipe], { wide: true }));
 
-    grid.appendChild(awardsTile(today, recs));
+    tiles.awards = awardsTile(today);
 
     // County contracts
     var cc = active.filter(function (r) { return r.recordType === 'County contract'; }).sort(attentionFirst(today));
-    grid.appendChild(tile('contracts', 'County contracts', [
+    tiles.contracts = (tile('contracts', [
       cc.length ? rows(cc.slice(0, 4), today) : el('p', { class: 'quiet empty', text: '·' }),
-      cc.length > 4 ? more('Show all', function () { showList('County contracts', function (r) { return r.recordType === 'County contract'; }, ORDER); }) : null
+      cc.length > 4 ? more('Show all', function () { showList(tileName('contracts'), function (r) { return r.recordType === 'County contract'; }, ORDER); }) : null
     ]));
 
     // Archive: its own search
-    var aq = el('input', { type: 'search', id: 'archiveSearch', placeholder: 'Search the archive', autocomplete: 'off' });
+    var aq = el('input', { type: 'search', id: 'archiveSearch', placeholder: 'Search', autocomplete: 'off' });
     aq.value = state.archiveQuery || '';
     var arch = recs.filter(function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }).sort(byName);
     var archList = el('div', { id: 'archiveList' });
@@ -482,12 +631,13 @@
       archList.innerHTML = '';
       var found = recs.filter(function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }).sort(byName);
       archList.appendChild(found.length ? rows(found.slice(0, 5), today) : el('p', { class: 'quiet empty', text: '·' }));
-      if (found.length > 5) archList.appendChild(more('Show all', function () { showList('Archive', function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }, ['Archived']); }));
+      if (found.length > 5) archList.appendChild(more('Show all', function () { showList(tileName('archive'), function (r) { return r.status === 'Archived' && matches(r, state.archiveQuery); }, ['Archived']); }));
     }
     aq.addEventListener('input', function () { state.archiveQuery = aq.value.trim(); fillArchive(); });
     fillArchive();
-    grid.appendChild(tile('archive', 'Archive', [el('label', {}, [el('span', { class: 'sr', text: 'Search the archive' }), aq]), archList]));
+    tiles.archive = (tile('archive', [el('label', {}, [el('span', { class: 'sr', text: 'Search ' + tileName('archive') }), aq]), archList]));
 
+    state.layout.order.forEach(function (k) { if (tiles[k]) grid.appendChild(tiles[k]); });
     listEl.appendChild(grid);
     if (arch) { /* kept for the search box above */ }
   }
@@ -526,7 +676,7 @@
         return { r: r, amt: derive.awardShares(r, store.items('awardYears'), mode)[focus] || 0 };
       }).filter(function (x) { return x.amt; }).sort(function (a, b) { return b.amt - a.amt; });
       sheet = el('table', { class: 'sheet' }, [
-        el('thead', {}, [el('tr', {}, [el('th', { text: 'Name' }), el('th', { text: 'Program' }), el('th', { text: 'Type' }), el('th', { class: 'num', text: String(focus) })])])
+        el('thead', {}, [el('tr', {}, [el('th', { text: label('name') }), el('th', { text: label('program') }), el('th', { text: label('recordType') }), el('th', { class: 'num', text: String(focus) })])])
       ]);
       var tb = el('tbody');
       lines.forEach(function (x) {
@@ -541,7 +691,7 @@
       sheet = el('div', { class: 'scroll' }, [sheet]);
     }
 
-    return tile('awards', 'Awards', [compare, bars,
+    return tile('awards', [compare, bars,
       sheet,
       more(state.expanded.awards ? 'Hide the list' : 'Show the list', function () { state.expanded.awards = !state.expanded.awards; render(); })
     ], { head: toggle });
@@ -554,7 +704,7 @@
   function keepFocus(fn) {
     var a = document.activeElement, key = null, tileKey = null, index = -1;
     if (a && a !== document.body && !dialog.contains(a)) {
-      if (a.id) key = '#' + a.id;
+      if (a.id) key = '#' + CSS.escape(a.id);
       else if (a.getAttribute('data-view')) key = '[data-view="' + a.getAttribute('data-view') + '"]';
       else if (a.getAttribute('aria-label')) key = '[aria-label="' + a.getAttribute('aria-label').replace(/"/g, '\\"') + '"]';
       var t = a.closest('[data-tile]');
@@ -577,17 +727,23 @@
   }
   var FOCUSABLE = 'button:not([disabled]), input, select, a[href]';
 
-  function render() { keepFocus(draw); }
+  function render() { keepFocus(draw); state.opening = null; }
 
   function draw() {
     var today = new Date();
+    refreshLabels();
     listEl.innerHTML = '';
     renderFilterChips();
+    if (!$('filterPanel').hidden) buildFilterPanel(); // names and custom fields may have changed
+    document.querySelector('label[for=addName]').textContent = label('name');
+    document.querySelector('label[for=addType]').textContent = label('recordType');
+    document.querySelector('h1').textContent = document.title = T('page.title', 'Grants Dashboard');
     if (state.query) {
       state.view = 'list';
       state.list = { title: 'Search', test: function () { return true; } };
     }
-    if (state.view === 'list' && state.list) renderList(today);
+    if (state.view === 'setup') renderSetup();
+    else if (state.view === 'list' && state.list) renderList(today);
     else renderHome(today);
     $('stamp').textContent = 'Updated ' + clock(store.loadedAt || new Date());
   }
@@ -646,12 +802,18 @@
 
   function field(r, key, opts) {
     opts = opts || {};
-    var col = schema.column('records', key) || { key: key, label: opts.label || key, type: opts.type || 'text' };
+    var col = schema.column('records', key) || { key: key, type: opts.type || 'text' };
+    var name = opts.label || label(key);
     var id = 'f-' + key;
     var value = r[key] === undefined || r[key] === null ? '' : r[key];
     var input;
 
-    if (col.type === 'note') {
+    if (col.type === 'yesno') {
+      input = el('select', { id: id }, [el('option', { value: '', text: '' }), el('option', { value: 'Yes', text: 'Yes' }), el('option', { value: 'No', text: 'No' })]);
+      var fits = value === '' || typeof value === 'boolean' || /^(yes|no|true|false)$/i.test(String(value));
+      if (!fits) input.appendChild(el('option', { value: '__as-is', text: String(value) })); // kept as it is until changed
+      input.value = value === '' ? '' : !fits ? '__as-is' : derive.isYes(value) ? 'Yes' : 'No';
+    } else if (col.type === 'note') {
       input = el('textarea', { id: id, rows: key === 'links' ? 3 : 2 });
       input.value = value;
     } else if (col.type === 'choice' || opts.choices) {
@@ -664,6 +826,7 @@
       input.value = value;
     } else {
       var type = { date: 'date', email: 'email', url: 'url', phone: 'tel', number: 'number' }[col.type] || 'text';
+      if (type === 'date' && value && !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) type = 'text'; // an older value that is not a date
       input = el('input', { id: id, type: type, autocomplete: 'off' });
       if (col.type === 'currency') input.setAttribute('inputmode', 'decimal');
       if (col.type === 'person') input.setAttribute('list', 'peopleList');
@@ -672,10 +835,11 @@
 
     input.addEventListener('change', function () {
       var v = input.value;
+      if (col.type === 'yesno') { if (v === '__as-is') return; v = v === '' ? '' : v === 'Yes'; }
       if (col.type === 'currency' || col.type === 'number') {
         var cleaned = v.replace(/[$,\s]/g, '');
         if (cleaned !== '' && !/^\d+(\.\d+)?$/.test(cleaned)) {
-          showProblem(new Error(col.label + ' takes a number, like 45000.'));
+          showProblem(new Error(name + ' takes a number, like 45000.'));
           input.value = shownValue(r[key]);
           return;
         }
@@ -698,7 +862,7 @@
     });
     if (input.tagName === 'INPUT') input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
 
-    return el('div', { class: 'field' + (opts.wide ? ' wide' : '') }, [el('label', { for: id, text: col.label }), input]);
+    return el('div', { class: 'field' + (opts.wide ? ' wide' : '') }, [el('label', { for: id, text: name }), input]);
   }
 
   // After a save, update the heading, the status notes and the links without rebuilding the
@@ -729,6 +893,7 @@
   function openDetail(id, focusKey) {
     var r = store.get('records', id);
     if (!r) { closeDetail(); return; }
+    refreshLabels();
     state.openId = id;
     var today = new Date();
     var shownStatus = derive.shown(r, today);
@@ -736,14 +901,12 @@
 
     var statusField = field(r, 'status', {
       wide: true,
-      optionText: function (s) { return s + ' (' + schema.STATUS_NOTES[s] + ')'; }
+      optionText: function (s) { var n = statusNote(s); return statusName(s) + (n ? ' (' + n + ')' : ''); }
     });
 
     var tasks = store.items('tasks').filter(function (t) { return t.record === id; });
     var years = store.items('awardYears').filter(function (y) { return y.record === id; }).sort(function (a, b) { return a.year - b.year; });
-    var custom = setting('customColumns').split(';').map(function (s) { return s.trim(); }).filter(Boolean).map(function (s) {
-      var p = s.split('|'); return { key: p[0], label: p[1] || p[0], type: p[2] || 'text' };
-    });
+    var custom = customCols();
 
     var body = el('div', { class: 'detailBody' }, [
       el('header', { class: 'detailHead' }, [
@@ -769,11 +932,13 @@
         field(r, 'endDate'),
         field(r, 'next', { wide: true })
       ]),
-      section('Contact', [field(r, 'contactName'), field(r, 'contactEmail'), field(r, 'contactPhone')], !!(r.contactName || r.contactEmail || r.contactPhone)),
-      section('Notes and links', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)], !!(r.comments || r.links || r.folderLink)),
-      tasks.length ? section('Tasks', [taskList(tasks)], true) : null,
-      years.length ? section('Award years', [yearList(years)], true) : null,
-      section('More details', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(custom.map(function (c) { return field(r, c.key, { label: c.label, type: c.type }); })), !!(r.watchDate || r.watchNote || custom.some(function (c) { return r[c.key]; }))),
+      section('contact', [field(r, 'contactName'), field(r, 'contactEmail'), field(r, 'contactPhone')], !!(r.contactName || r.contactEmail || r.contactPhone)),
+      section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)], !!(r.comments || r.links || r.folderLink)),
+      tasks.length ? section('tasks', [taskList(tasks)], true) : null,
+      years.length ? section('awardYears', [yearList(years)], true) : null,
+      section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(custom.map(function (c) {
+        return field(r, c.key, { label: c.label, type: c.type, choices: c.type === 'choice' ? c.choices : null, wide: c.type === 'note' });
+      })), !!(r.watchDate || r.watchNote || custom.some(function (c) { return r[c.key] !== undefined && r[c.key] !== ''; }))),
       el('div', { class: 'detailActions' }, [
         archived
           ? el('button', { type: 'button', class: 'primary', onclick: function () { restoreRecord(r); } }, ['Restore'])
@@ -792,10 +957,10 @@
   }
 
   var openSections = {};
-  function section(title, kids, open) {
-    var isOpen = title in openSections ? openSections[title] : open;
-    var d = el('details', { class: 'more', open: isOpen }, [el('summary', { text: title }), el('div', { class: 'fields' }, kids)]);
-    d.addEventListener('toggle', function () { openSections[title] = d.open; });
+  function section(key, kids, open) {
+    var isOpen = key in openSections ? openSections[key] : open;
+    var d = el('details', { class: 'more', 'data-section': key, open: isOpen }, [el('summary', { text: sectionName(key) }), el('div', { class: 'fields' }, kids)]);
+    d.addEventListener('toggle', function () { openSections[key] = d.open; });
     return d;
   }
 
@@ -825,7 +990,7 @@
   function archiveRecord(r) {
     store.update('records', r.id, { status: 'Archived', previousStatus: r.status, archiveReason: r.archiveReason || '' }).then(function (res) {
       render(); openDetail(r.id, 'archiveReason');
-      toast('Archived.', { list: 'records', before: res.before });
+      toast(statusName('Archived') + '.', { list: 'records', before: res.before });
     }).catch(showProblem);
   }
 
@@ -833,9 +998,155 @@
     var back = r.previousStatus && r.previousStatus !== 'Archived' ? r.previousStatus : 'Potentials';
     store.update('records', r.id, { status: back, archiveReason: '', previousStatus: '' }).then(function (res) {
       render(); openDetail(r.id);
-      toast('Restored to ' + back + '.', { list: 'records', before: res.before });
+      toast('Restored to ' + statusName(back) + '.', { list: 'records', before: res.before });
     }).catch(showProblem);
   }
+
+  // ---------- Labels and fields: rename anything, add fields, reset the layout ----------
+
+  function setSetting(key, value, note) {
+    var row = store.items('settings').filter(function (x) { return x.key === key; })[0];
+    var p = row
+      ? store.update('settings', row.id, { value: value }).then(function (res) { return { list: 'settings', before: res.before }; })
+      : store.add('settings', { key: key, value: value }).then(function (item) { return { list: 'settings', id: item.id, added: true }; });
+    return p.then(function (undo) {
+      if (key === 'customColumns') { state.filters = liveFilters(); keepFilters(); } // drop filters on fields that are gone
+      afterSave(); toast(note || 'Saved.', undo);
+    });
+  }
+
+  // A save fires as focus leaves a box. On the Labels page, wait until focus has landed on
+  // whatever the person moved to, so the rebuild can put it back there and nothing typed is lost.
+  function afterSave() {
+    if (state.view !== 'setup') { render(); return; }
+    setTimeout(function () {
+      var want = state.focusNext; state.focusNext = null;
+      render();
+      var f = want && $(want);
+      if (f) f.focus();
+    }, 0);
+  }
+
+  function setLabel(key, fallback, text) {
+    text = String(text || '').trim();
+    var row = store.items('labels').filter(function (x) { return x.key === key; })[0];
+    if ((row ? row.customText || '' : '') === text) return;
+    var p = row
+      ? store.update('labels', row.id, { customText: text }).then(function (res) { return { list: 'labels', before: res.before }; })
+      : store.add('labels', { key: key, defaultText: fallback, customText: text }).then(function (item) { return { list: 'labels', id: item.id, added: true }; });
+    p.then(function (undo) { afterSave(); toast(text ? 'Renamed.' : 'Back to "' + fallback + '".', undo); });
+  }
+
+  function labelInput(item, lab) {
+    var id = 'lbl-' + item.key;
+    var inp = el('input', { id: id, autocomplete: 'off', placeholder: item.text, 'data-label': item.key });
+    inp.value = T(item.key, '') === item.text ? '' : T(item.key, '');
+    inp.addEventListener('change', function () { setLabel(item.key, item.text, inp.value); });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    return el('div', { class: 'field' }, [el('label', { for: id, text: lab || item.text }), inp]);
+  }
+
+  var setupOpen = { tiles: true };
+  function setupSection(key, title, kids) {
+    var d = el('details', { class: 'more', 'data-setup': key, open: !!setupOpen[key] }, [el('summary', { text: title }), el('div', { class: 'fields' }, kids)]);
+    d.addEventListener('toggle', function () { setupOpen[key] = d.open; });
+    return d;
+  }
+
+  function renderSetup() {
+    listEl.appendChild(el('div', { class: 'listHead' }, [
+      el('button', { type: 'button', class: 'link', text: '← Home', onclick: function () { showHome(); } }),
+      el('h2', { text: 'Labels and fields' })
+    ]));
+    var box = el('div', { class: 'list setup' });
+    S.labelGroups().forEach(function (g) {
+      var kids = [];
+      g.items.forEach(function (item) {
+        if (!item.note) { kids.push(labelInput(item)); return; }
+        var st = item.key.slice('status.'.length);
+        var show = el('input', { type: 'checkbox', id: 'showNote-' + st });
+        show.checked = !noteHidden(st);
+        show.addEventListener('change', function () {
+          var hidden = settingList('hiddenStatusNotes').filter(function (x) { return x !== st; });
+          if (!show.checked) hidden.push(st);
+          setSetting('hiddenStatusNotes', hidden.join('; '), show.checked ? 'Explanation shown.' : 'Explanation hidden.');
+        });
+        kids.push(el('div', { class: 'pair wide' }, [labelInput(item), labelInput(item.note, item.text + ' explanation'),
+          el('label', { class: 'toggle' }, [show, 'Show'])]));
+      });
+      box.appendChild(setupSection(g.key, g.text, kids));
+    });
+    box.appendChild(setupSection('custom', 'Your own fields', customEditor()));
+    box.appendChild(setupSection('layout', 'Layout', [
+      el('button', { type: 'button', class: 'quietBtn', id: 'resetLayout', onclick: function () { setLayout(null, 'Layout back to the start.'); } }, ['Reset layout'])
+    ]));
+    listEl.appendChild(box);
+  }
+
+  // Your own fields: each shows under More details on every record; choice, date and
+  // yes-or-no fields also get a filter. Taking one off the page keeps what records hold.
+  function customEditor() {
+    var cols = customCols();
+    var save = function (next, note) { setSetting('customColumns', S.formatCustom(next), note); };
+    var kids = cols.map(function (c, i) {
+      var change = function (patch, note) { var next = cols.map(function (x) { return Object.assign({}, x); }); Object.assign(next[i], patch); save(next, note); };
+      var nameIn = el('input', { id: 'cf-name-' + c.key, autocomplete: 'off', value: c.label });
+      nameIn.addEventListener('change', function () { if (nameIn.value.trim()) change({ label: nameIn.value.trim() }, 'Renamed.'); else nameIn.value = c.label; });
+      var typeSel = el('select', { id: 'cf-type-' + c.key });
+      S.TYPES.forEach(function (t) { typeSel.appendChild(el('option', { value: t.key, text: t.text })); });
+      typeSel.value = c.type;
+      typeSel.addEventListener('change', function () { change({ type: typeSel.value }); });
+      var parts = [
+        el('div', { class: 'field' }, [el('label', { for: nameIn.id, text: 'Name' }), nameIn]),
+        el('div', { class: 'field' }, [el('label', { for: typeSel.id, text: 'Kind' }), typeSel])
+      ];
+      if (c.type === 'choice') {
+        var ch = el('input', { id: 'cf-choices-' + c.key, autocomplete: 'off', value: c.choices.join(', ') });
+        ch.addEventListener('change', function () { change({ choices: ch.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }); });
+        parts.push(el('div', { class: 'field wide' }, [el('label', { for: ch.id, text: 'Choices' }), ch]));
+      }
+      var foot = [];
+      if (c.type === 'choice' || c.type === 'date' || c.type === 'yesno') {
+        var fl = el('input', { type: 'checkbox', id: 'cf-filter-' + c.key });
+        fl.checked = c.filter !== false;
+        fl.addEventListener('change', function () { change({ filter: fl.checked }, fl.checked ? 'Filter on.' : 'Filter off.'); });
+        foot.push(el('label', { class: 'toggle' }, [fl, 'Filter']));
+      }
+      foot.push(el('button', { type: 'button', class: 'link', text: 'Take off the page', 'aria-label': 'Take ' + c.label + ' off the page', onclick: function () {
+        state.focusNext = cols[i + 1] ? 'cf-name-' + cols[i + 1].key : 'newFieldName';
+        save(cols.filter(function (x, j) { return j !== i; }), c.label + ' off the page.');
+      } }));
+      parts.push(el('div', { class: 'customFoot wide' }, foot));
+      return el('div', { class: 'customField wide', 'data-custom': c.key }, parts);
+    });
+
+    var newName = el('input', { id: 'newFieldName', autocomplete: 'off' });
+    var newType = el('select', { id: 'newFieldType' });
+    S.TYPES.forEach(function (t) { newType.appendChild(el('option', { value: t.key, text: t.text })); });
+    var addForm = el('form', { class: 'customAdd wide' }, [
+      el('div', { class: 'field' }, [el('label', { for: 'newFieldName', text: 'New field' }), newName]),
+      el('div', { class: 'field' }, [el('label', { for: 'newFieldType', text: 'Kind' }), newType]),
+      el('button', { type: 'submit', class: 'primary' }, ['Add field'])
+    ]);
+    addForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = newName.value.replace(/[|;]/g, ' ').trim();
+      if (!name) { newName.focus(); return; }
+      var taken = cols.map(function (x) { return x.key; });
+      var col = { key: S.newKey(name, taken), label: name, type: newType.value, choices: [], filter: true };
+      setupOpen.custom = true;
+      state.focusNext = 'cf-name-' + col.key;
+      save(cols.concat([col]), name + ' added.');
+    });
+    kids.push(addForm);
+    return kids;
+  }
+
+  $('setupBtn').addEventListener('click', function () {
+    state.view = 'setup'; state.list = null;
+    if (state.query) { state.query = ''; $('search').value = ''; }
+    closeDetail(); render(); window.scrollTo(0, 0);
+  });
 
   // ---------- start ----------
 
