@@ -64,10 +64,16 @@ export async function grantsGov(keywords, fetchImpl = fetch, resolve = lookup) {
     }, fetchImpl, resolve, ctl.signal).then((text) => watch.grantsGovItems(JSON.parse(text)))));
     const ok = answers.filter((a) => a.status === 'fulfilled');
     if (!ok.length) throw answers[0].reason;
-    const found = new Map();
-    ok.forEach((a) => a.value.forEach((i) => { if (!found.has(i.id)) found.set(i.id, i); }));
-    // Soonest closing first; ones with no close date after
-    return [...found.values()].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999')).slice(0, 40);
+    // Most fitting first: found by more of the keywords, and with a keyword in its title; then
+    // soonest closing, with ones that have no close date after
+    const found = new Map(), score = new Map();
+    ok.forEach((a, n) => a.value.forEach((i) => {
+      if (!found.has(i.id)) found.set(i.id, i);
+      score.set(i.id, (score.get(i.id) || 0) + 1);
+    }));
+    const inTitle = (i) => words.some((w) => i.title.toLowerCase().includes(w.toLowerCase()));
+    found.forEach((i) => { if (inTitle(i)) score.set(i.id, score.get(i.id) + 2); });
+    return [...found.values()].sort((a, b) => (score.get(b.id) - score.get(a.id)) || (a.date || '9999').localeCompare(b.date || '9999')).slice(0, 40);
   } finally {
     clearTimeout(timer);
   }

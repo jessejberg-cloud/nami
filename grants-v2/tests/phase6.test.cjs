@@ -24,7 +24,8 @@ const SEARCH2 = {
 
 test('Grants.gov answers become results', () => {
   const req = W.grantsGovRequest('peer support');
-  assert.deepEqual(req, { keyword: 'peer support', oppStatuses: 'forecasted|posted', eligibilities: '12', rows: 25 });
+  assert.deepEqual(req, { keyword: '"peer support"', oppStatuses: 'forecasted|posted', eligibilities: '12', rows: 25 }, 'a phrase stays a phrase');
+  assert.equal(W.grantsGovRequest('crisis').keyword, 'crisis');
   const items = W.grantsGovItems(SEARCH2);
   assert.equal(items.length, 2, 'a result with no title is left out');
   assert.deepEqual(items[0], {
@@ -131,13 +132,20 @@ test('the feed function: Grants.gov by keyword, feeds by link, nothing private',
   const calls = [];
   const gg = (url, init) => { calls.push(JSON.parse(init.body).keyword); return Promise.resolve(answer(200, SEARCH2)); };
   const items = await fn.grantsGov('mental health; peer support; mental health', gg, resolve);
-  assert.deepEqual(calls, ['mental health', 'peer support'], 'each keyword asked once');
+  assert.deepEqual(calls, ['"mental health"', '"peer support"'], 'each keyword asked once');
   assert.equal(items.length, 2, 'the same opportunity found twice shows once');
   assert.equal(items[0].id, 'gg-358001', 'soonest closing first');
   await assert.rejects(fn.grantsGov('', gg, resolve), /No keywords/);
   // One keyword failing still gives the others' results
   let k = 0;
   assert.equal((await fn.grantsGov('a; b', () => Promise.resolve(k++ ? answer(500, 'no') : answer(200, SEARCH2)), resolve)).length, 2);
+  // A result with a keyword in its title comes before one that only closes sooner
+  const mixed = { data: { oppHits: [
+    { id: '1', title: 'Travel-associated Infectious Diseases', agency: 'CDC', closeDate: '11/05/2026' },
+    { id: '2', title: 'Peer Support Recovery Services', agency: 'SAMHSA', closeDate: '01/15/2027' }
+  ] } };
+  const ranked = await fn.grantsGov('peer support', () => Promise.resolve(answer(200, mixed)), resolve);
+  assert.deepEqual(ranked.map((i) => i.id), ['gg-2', 'gg-1']);
 
   const rss = '<rss><channel><item><title>One</title><link>https://example.org/1</link></item></channel></rss>';
   assert.equal((await fn.feed('https://example.org/f.xml', () => Promise.resolve(answer(200, rss)), resolve))[0].title, 'One');

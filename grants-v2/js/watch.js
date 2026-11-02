@@ -34,7 +34,9 @@
   }
 
   function grantsGovRequest(keyword) {
-    return { keyword: keyword, oppStatuses: 'forecasted|posted', eligibilities: '12', rows: 25 };
+    // A phrase is searched as a phrase, so "peer support" does not match every grant about support
+    var k = String(keyword || '').trim().replace(/"/g, '');
+    return { keyword: /\s/.test(k) ? '"' + k + '"' : k, oppStatuses: 'forecasted|posted', eligibilities: '12', rows: 25 };
   }
 
   function grantsGovItems(json) {
