@@ -27,7 +27,12 @@
   // Opened straight from a folder there is no feed function to ask, so the feeds show sample results
   var feedEndpoint = (CFG.feeds && CFG.feeds.endpoint) || (location.protocol === 'file:' ? 'sample' : '/.netlify/functions/feeds');
   var feedClient = W.createFeedClient({ endpoint: feedEndpoint, sampleResults: function (f) { return N.sample.feedResults(f, new Date()); } });
-  var rawStore = N.data.createSampleStore({ storage: window.localStorage });
+  var CFG0 = window.NAMI_CONFIG || {};
+  // SharePoint mode: Microsoft sign-in plus a site address in js/config.js; otherwise Sample data
+  var onSharePoint = CFG0.mode === 'microsoft' && !!(CFG0.sharepoint && CFG0.sharepoint.siteUrl);
+  var rawStore = onSharePoint
+    ? N.data.createSharePointStore({ siteUrl: CFG0.sharepoint.siteUrl, token: function () { return auth.token(); } })
+    : N.data.createSampleStore({ storage: window.localStorage });
   // Every change passes the signed-in person's role; a viewer can only log progress on their tasks
   var store = A.guard(rawStore, function () { return state.who; });
   var auth = N.auth.createAuth(window.NAMI_CONFIG, { storage: window.localStorage, people: function () { return rawStore.items('people'); } });
@@ -1097,7 +1102,8 @@
     if (!editor) { $('add').hidden = true; $('addForm').hidden = true; if (state.view === 'setup') state.view = 'home'; }
     else if ($('addForm').hidden) $('add').hidden = false;
     $('setupBtn').hidden = !editor;
-    $('reset').hidden = !editor;
+    $('reset').hidden = !editor || onSharePoint;
+    $('allLists').hidden = onSharePoint; // that page shows the sample
     renderWho();
     document.querySelector('label[for=addName]').textContent = label('name');
     document.querySelector('label[for=addType]').textContent = label('recordType');
@@ -1674,7 +1680,10 @@
       var col = { key: S.newKey(name, taken), label: name, type: newType.value, choices: [], filter: true };
       setupOpen.custom = true;
       state.focusNext = 'cf-name-' + col.key;
-      save(cols.concat([col]), name + ' added.');
+      // On SharePoint the field needs its own column on Records first
+      (rawStore.ensureColumn ? rawStore.ensureColumn('records', col) : Promise.resolve()).then(function () {
+        save(cols.concat([col]), name + ' added.');
+      }).catch(function (err) { console.error(err); toast('That field could not be added: ' + err.message); });
     });
     kids.push(addForm);
     return kids;
@@ -1746,20 +1755,87 @@
     document.body.setAttribute('data-loaded', 'yes');
   }
 
-  store.load().then(function () { return auth.start(); }).then(function (person) {
-    if (!person) { showSignIn(); return; }
-    signedIn(person);
+  // ---------- SharePoint: first-time setup, and fresh data when someone comes back to the page ----------
+
+  function showSetupLists(person, missing) {
+    state.who = null;
+    $('who').innerHTML = '';
+    ['add', 'filtersBtn', 'setupBtn'].forEach(function (id) { $(id).hidden = true; });
+    document.querySelector('.bar').hidden = true;
+    listEl.innerHTML = '';
+    var problem = el('p', { class: 'problem', hidden: true });
+    var go = el('button', { type: 'button', class: 'primary', id: 'setupLists' }, ['Set up the lists']);
+    go.addEventListener('click', function () {
+      go.disabled = true; go.textContent = 'Setting up';
+      problem.hidden = true;
+      rawStore.setup(person).then(function () { return rawStore.load(); }).then(function () {
+        document.querySelector('.bar').hidden = false; $('filtersBtn').hidden = false;
+        signedIn(person);
+        toast('The lists are ready.');
+      }).catch(function (e) {
+        console.error(e);
+        go.disabled = false; go.textContent = 'Set up the lists';
+        // Someone who may only read the site cannot make lists; an editor opens the page first
+        problem.textContent = e.status === 403 ? 'Your SharePoint permissions do not let you make lists. Ask an editor to open the page first.' : e.message;
+        problem.hidden = false;
+      });
+    });
+    listEl.appendChild(el('div', { class: 'list signIn' }, [
+      el('h2', { text: 'Set up the lists' }),
+      el('p', { text: 'The SharePoint site has no ' + missing.map(function (k) { return schema.list(k).sp; }).join(', ') + ' list yet. This makes them, with NAMI\'s settings, the Funding Watch starting list, and you as the first editor.' }),
+      problem, go
+    ]));
     document.body.setAttribute('data-loaded', 'yes');
-  }).catch(function (e) {
+  }
+
+  function loadProblem(e) {
+    console.error(e);
+    listEl.innerHTML = '';
+    listEl.appendChild(el('div', { class: 'list signIn' }, [
+      el('h2', { text: 'The records did not load' }),
+      el('p', { class: 'problem', text: e.message }),
+      el('button', { type: 'button', class: 'primary', id: 'tryAgain', onclick: function () { location.reload(); } }, ['Try again'])
+    ]));
+    document.body.setAttribute('data-loaded', 'yes');
+  }
+
+  // Coming back to the page after a while reads the lists again, so other people's changes show
+  var STALE_MS = 2 * 60 * 1000;
+  document.addEventListener('visibilitychange', function () {
+    if (!onSharePoint || document.hidden || !state.who || dialog.open) return;
+    if (store.loadedAt && Date.now() - store.loadedAt.getTime() < STALE_MS) return;
+    rawStore.load().then(function () { render(); }).catch(function (e) { console.warn('Could not read the lists again:', e.message); });
+  });
+
+  function startFailed(e) {
     if (auth.mode === 'microsoft') {
       console.error(e);
       if (e && e.notSetUp) showSignIn('Microsoft sign-in is not set up yet.', true);
       else showSignIn('Sign-in did not finish.');
       return;
     }
-    listEl.innerHTML = '';
-    listEl.appendChild(el('p', { class: 'quiet', text: 'The records could not load: ' + e.message }));
-  });
+    loadProblem(e);
+  }
+
+  if (onSharePoint) {
+    // Sign in first: SharePoint is read as the signed-in person
+    auth.start().then(function (person) {
+      if (!person) { showSignIn(); return; }
+      return rawStore.load().then(function () {
+        signedIn(person);
+        document.body.setAttribute('data-loaded', 'yes');
+      }, function (e) {
+        if (e && e.needsSetup) showSetupLists(person, e.missing);
+        else loadProblem(e);
+      });
+    }, startFailed);
+  } else {
+    store.load().then(function () { return auth.start(); }).then(function (person) {
+      if (!person) { showSignIn(); return; }
+      signedIn(person);
+      document.body.setAttribute('data-loaded', 'yes');
+    }).catch(startFailed);
+  }
 
   // For the browser tests
   window.NAMI.app = { store: store, rawStore: rawStore, render: render, openDetail: openDetail, openTask: openTask, openWatch: openWatch, state: state, auth: auth };

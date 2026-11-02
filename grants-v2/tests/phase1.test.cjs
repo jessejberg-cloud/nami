@@ -154,12 +154,12 @@ test('the page still works when browser storage is blocked', async () => {
   await store.add('records', { name: 'Still fine' });
 });
 
-test('SharePoint mode has the same interface and says it is not connected yet', async () => {
-  const sp = data.createSharePointStore();
+test('SharePoint mode has the same interface as Sample mode', async () => {
+  const sp = data.createSharePointStore({ siteUrl: 'https://x.sharepoint.com/sites/G', token: () => Promise.resolve('t') });
   const sm = data.createSampleStore({ storage: memoryStorage(), build: sample.build });
   ['mode', 'load', 'items', 'get', 'add', 'update', 'restore', 'remove', 'reset', 'loadedAt'].forEach((k) => {
     assert.ok(k in sp, 'SharePoint store lacks ' + k);
     assert.ok(k in sm, 'Sample store lacks ' + k);
   });
-  await assert.rejects(sp.load(), /not connected yet/);
+  await assert.rejects(sp.reset(), /never started over/);
 });

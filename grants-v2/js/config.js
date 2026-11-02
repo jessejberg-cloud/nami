@@ -4,7 +4,8 @@
   mode: 'sample'     fictional data in this browser, with a "Signed in as" list (the default)
         'microsoft'  sign in with NAMI Microsoft 365 accounts. Fill in clientId and tenantId from
                      the app registration NAMI's Microsoft admins make (see README, "Sign-in").
-                     The data stays Sample data until SharePoint mode arrives in Phase 7.
+  sharepoint.siteUrl the SharePoint site that holds the lists (microsoft mode only). Blank keeps
+                     Sample data, so sign-in can be tried on its own first.
   feeds.endpoint     see below
 */
 window.NAMI_CONFIG = {
@@ -13,6 +14,9 @@ window.NAMI_CONFIG = {
     clientId: '',
     tenantId: '',
     redirectUri: '' // blank means this page's own address
+  },
+  sharepoint: {
+    siteUrl: '' // for example https://namisewi.sharepoint.com/sites/Grants
   },
   feeds: {
     // Where Funding Watch asks for Grants.gov and feed results. Blank means the feed function

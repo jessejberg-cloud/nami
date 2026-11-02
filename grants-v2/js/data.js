@@ -3,7 +3,7 @@
 
   Two modes behind one interface, so the screens never know which is in use:
     Sample mode      fictional records kept in this browser (localStorage), for building and training
-    SharePoint mode  NAMI's own SharePoint lists, through Microsoft sign-in (arrives in Phase 7)
+    SharePoint mode  NAMI's own SharePoint lists, through Microsoft sign-in (js/sharepoint.js)
 
   The interface every store offers:
     store.mode                     'sample' or 'sharepoint'
@@ -177,14 +177,11 @@
     return store;
   }
 
-  // SharePoint mode keeps the same shape. It is filled in during Phase 7.
-  function createSharePointStore() {
-    function notYet() { return Promise.reject(new Error('SharePoint mode is not connected yet.')); }
-    return {
-      mode: 'sharepoint', loadedAt: null,
-      load: notYet, add: notYet, update: notYet, restore: notYet, remove: notYet, reset: notYet,
-      items: function () { return []; }, get: function () { return null; }
-    };
+  // SharePoint mode keeps the same shape; it lives in js/sharepoint.js
+  function createSharePointStore(options) {
+    var sp = root.NAMI && root.NAMI.sharepoint;
+    if (!sp && typeof require === 'function') sp = require('./sharepoint.js');
+    return sp.createSharePointStore(options);
   }
 
   var api = { createSampleStore: createSampleStore, createSharePointStore: createSharePointStore, prepare: prepare, STORAGE_KEY: STORAGE_KEY };

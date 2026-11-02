@@ -11,14 +11,15 @@
   auth.start()      Promise; the signed-in { name, email }, or null when nobody is signed in
   auth.signIn()     sends the person to Microsoft's sign-in page (microsoft) or picks a person (sample)
   auth.signOut()
-  auth.token()      Promise; an access token for Microsoft Graph (microsoft only; used in Phase 7)
+  auth.token()      Promise; an access token for Microsoft Graph (microsoft only; SharePoint mode uses it)
 */
 (function (root) {
   'use strict';
 
   var PERSON_KEY = 'nami-grants-v2-sample-person';
   // Delegated permissions: people only ever reach what SharePoint already lets them reach.
-  var SCOPES = ['User.Read', 'Sites.ReadWrite.All'];
+  // Sites.Manage.All lets an editor's "Set up the lists" and "Your own fields" make lists and columns.
+  var SCOPES = ['User.Read', 'Sites.ReadWrite.All', 'Sites.Manage.All'];
   var MSAL_URL = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
 
   function createSampleAuth(options) {
