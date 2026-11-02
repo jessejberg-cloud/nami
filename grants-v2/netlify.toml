@@ -1,0 +1,6 @@
+# NAMI Grants Dashboard v2 on Netlify: the folder is the site; one function fetches feeds.
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"

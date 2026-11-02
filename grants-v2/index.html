@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grants Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&family=Roboto+Slab:wght@400&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="brandBand">
+    <header class="top">
+      <div class="brandName">
+        <span class="brandMark" aria-hidden="true">NAMI</span>
+        <span class="brandWords">Southeast <br>Wisconsin</span>
+      </div>
+      <h1><a href="./" id="homeLink" class="homeLink" title="Go home">Grants Dashboard</a></h1>
+      <div class="who" id="who"></div>
+      <button type="button" id="setupBtn" class="gearBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true" class="icon"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>
+    </header>
+  </div>
+
+  <div class="bar">
+    <label class="search">
+      <span class="sr">Search</span>
+      <input type="search" id="search" placeholder="Search" autocomplete="off">
+    </label>
+    <button type="button" id="homeBtn" class="quietBtn homeBtn" aria-label="Home">⌂ Home</button>
+    <button type="button" id="filtersBtn" class="quietBtn" aria-expanded="false" aria-controls="filterPanel">Filters</button>
+    <button type="button" id="add" class="primary">+ Add a grant or contract</button>
+  </div>
+
+
+  <div id="filterPanel" class="filterPanel" hidden></div>
+  <div id="filterChips" class="filterChips" hidden></div>
+
+  <main id="records">
+    <p class="quiet">Loading</p>
+  </main>
+
+  <dialog id="detail" aria-labelledby="detailName"></dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toastText"></span>
+    <button type="button" id="toastUndo" class="link">Undo</button>
+  </div>
+
+  <details class="notesBox" id="notesBox">
+    <summary>Problems and ideas</summary>
+    <p class="quiet">Write down anything that goes wrong or anything you wish the page did. Copy them all to send to Jesse.</p>
+    <form id="noteForm">
+      <label for="noteText" class="sr">A problem or an idea</label>
+      <textarea id="noteText" rows="3"></textarea>
+      <div class="noteButtons">
+        <button type="submit" class="primary" id="noteSave">Save note</button>
+        <button type="button" class="quietBtn" id="noteCopy">Copy all</button>
+      </div>
+    </form>
+    <ul class="plainList notes" id="noteList"></ul>
+  </details>
+
+  <footer class="foot">
+    <span id="stamp"></span>
+    <span>
+      <a href="lists.html" id="allLists">All lists</a>
+      <button type="button" id="reset" class="link">Start the sample over</button>
+    </span>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/schema.js"></script>
+  <script src="js/sample-data.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/sharepoint.js"></script>
+  <script src="js/derive.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/access.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/watch.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

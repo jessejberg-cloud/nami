@@ -1,10 +1,21 @@
 # Where the NAMI Dashboard Suite stands
 
-*The one place that says where we are. Update it whenever a stage moves, a decision is made, or something goes live. Last updated 2026-10-05.*
+*The one place that says where we are. Update it whenever a stage moves, a decision is made, or something goes live. Last updated 2026-11-01.*
 
 ## Right now
 
 **Stage 1 of 5: talking it through with Emily (the Executive Director), this week.** Everything is built, live and documented. Jesse sent Emily an informal overview on 2026-10-05 with the landing page, the plan and the handbook, and four options to think about. Nothing has gone to staff yet. The next move is the conversation; then the answers come back here and the documents are updated to match.
+
+## New since 2026-11-01: Grants Dashboard v2
+
+Tester feedback and a Nov 1 interview led to a v2 rebuild of the Grant Dashboard, planned in `grants-v2/` (see `grants-v2/SPEC.md`). v2 sits over NAMI's own SharePoint lists, signs in with NAMI Microsoft 365, and folds Grant Radar into a Potentials status and a Funding Watch tile. The live ChatGPT Dashboard and Grant Radar keep running until v2 launches.
+
+- Interview answers: Angela is the champion (one of 3 senior-leader editors, room for 6); staff only, no volunteers; other staff read-only, filtered to their program; Microsoft 365 admins are Emily and Nicole; calendar year; "NAMI database" means their OneDrive.
+- Plan and gaps analysis: https://claude.ai/artifact/RYKZP5UCuqF5JmWwSPXLjK
+- Phase 1 (data layer, Sample mode, list schema, sample data), Phase 2 (records: statuses, detail view, county contracts, archive, Undo) Phase 3 (home tiles, To-do, Awards toggle, filters), Phase 4 (labels, custom fields, collapse, drag, saved layout), Phase 5 (sign-in, roles, program views, Progress) and Phase 6 (Funding Watch: Grants.gov and feeds through a Netlify function, watch list, Review items in To-do) done 2026-11-01. Phase 7 (SharePoint mode over Microsoft Graph with "Set up the lists", Netlify setup, `grants-v2/docs/admin-guide.md`, `grants-v2/docs/setup-visit-checklist.md`) built 2026-11-02 and tested against a stand-in for Graph. Test site live 2026-11-02 at https://nami-grants-test.netlify.app (Jesse's Netlify; real Grants.gov results confirmed). Nov 2 test-site feedback built the same day: + fields in any part of a record, Home everywhere, NAMI SEWI colors, To-do naming, Settings behind a gear (Staff, Programs, Email templates, Automatic switches, Layout), Team on records, check-ins per grant with calendar invites and reminder dates, email composer with templates, Problems and ideas box, Owner and Team can comment, check off and mark done every to-do on their grants (grants-v2/SPEC.md, Decided, Test-site feedback). Still to do: Jesse's own Microsoft 365 test (app registration with Sites.Manage.All, a test SharePoint site), then the setup visit at NAMI. Real Grants.gov results are untested until the page is on Netlify. Microsoft sign-in is built but untested until NAMI registers the app (grants-v2/README.md, Sign-in). Jesse takes Claude's recommendations as defaults and is asked only when his judgment is needed.
+- Jesse's working copy: `C:\Users\jesse\OneDrive\Office Space\08 Miscellaneous\NAMI\Grant Dashbaord`
+
+The stages below predate v2 and will be rewritten once its plan is approved.
 
 ## The stages
 
@@ -64,6 +75,8 @@ Tell Claude the four answers, plus a start date. Claude then:
 | 2026-10-05 | One handbook for everyone, leadership first, gaps included, PDF and Word |
 | 2026-10-05 | Phase two's home is a NAMI-owned GitHub organization and Cloudflare account, free at this size |
 | 2026-10-05 | Intrinsic Change (Jesse's practice tools) lives only in its own repository, never here |
+| 2026-11-01 | v2 of the Grant Dashboard is built in `grants-v2/` in this repository, from the Nov 1 v2 plan, not ported from the ChatGPT version |
+| 2026-11-01 | The portable ADHD design guide (`grants-v2/docs/adhd-design-guide.md`) is the design law for v2 |
 | *pending* | Who sends the program emails (the documents currently say Emily forwards them) |
 
 ## Where everything is

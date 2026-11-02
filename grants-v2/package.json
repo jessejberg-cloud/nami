@@ -1,0 +1,7 @@
+{
+  "name": "nami-grants-dashboard-v2",
+  "private": true,
+  "type": "commonjs",
+  "description": "No build step. This file only tells Node to read the js/ files as ordinary scripts for the tests.",
+  "scripts": { "test": "node --test tests/*.test.cjs" }
+}
