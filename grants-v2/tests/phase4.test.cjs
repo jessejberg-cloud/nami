@@ -111,6 +111,7 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   assert.ok((await page.textContent('[data-tile=pipeline]')).includes('(we said yes)'), 'status explanation');
   assert.ok(!(await page.textContent('body')).includes('Upcoming'), 'the old status name is gone from the page');
   await page.click('#filtersBtn');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
   assert.equal(await page.textContent('label[for="flt-funder"]'), 'Funder name', 'filter label from the field name');
   assert.equal(await page.textContent('label[for="flt-year"]'), 'Calendar year', 'filter name');
   assert.ok((await page.$$eval('#flt-status option', (os) => os.map((o) => o.textContent))).includes('Planning to apply'), 'status filter choice');
@@ -121,7 +122,7 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   await page.waitForSelector('dialog[open]');
   assert.equal(await page.textContent('label[for="f-funder"]'), 'Funder name', 'detail field');
   assert.equal(await page.textContent('[data-section=contact] summary'), 'Who to call', 'detail section');
-  assert.ok((await page.$$eval('#f-status option', (os) => os.map((o) => o.textContent))).includes('Planning to apply (we said yes)'), 'status dropdown');
+  assert.ok((await page.$$eval('#f-status option', (os) => os.map((o) => o.textContent))).includes('Planning to apply'), 'status dropdown');
   await page.keyboard.press('Escape');
   await page.fill('#search', 'peer workforce');
   assert.equal(await page.locator('.group h2', { hasText: 'Planning to apply' }).count(), 1, 'full list heading');
@@ -176,6 +177,8 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   await page.keyboard.press('Escape');
   await page.waitForSelector('dialog[open]', { state: 'detached' });
   if (await page.isHidden('#filterPanel')) await page.click('#filtersBtn');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
   assert.equal(await page.textContent('label[for="flt-d.siteVisit.from"]'), 'Site visit from');
   await page.fill('[id="flt-d.siteVisit.from"]', '2026-12-01');
   await page.dispatchEvent('[id="flt-d.siteVisit.from"]', 'change');

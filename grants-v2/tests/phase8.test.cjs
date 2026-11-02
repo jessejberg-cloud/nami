@@ -161,7 +161,7 @@ test('in the browser: a to-do can be assigned and dated as it is added', { skip:
     const someone = await page.evaluate(() => window.NAMI.app.store.items('people').map((p) => p.person).filter((p) => p !== window.NAMI.app.state.who.person)[0]);
     assert.ok(await page.inputValue('#newTaskWho'), 'starts as the person adding it');
     await page.fill('#newTaskTitle', 'Send site photos');
-    await page.fill('#newTaskWho', someone);
+    await page.selectOption('#newTaskWho', someone);
     await page.fill('#newTaskDue', '2026-12-01');
     await page.click('#addTask');
     await page.waitForSelector('[data-task-view]');
@@ -237,6 +237,9 @@ test('in the browser: reminders on a to-do, check-ins on To-do, and every automa
     const [download] = await Promise.all([page.waitForEvent('download'), page.click('#calendarCheckIn')]);
     const ics = require('node:fs').readFileSync(await download.path(), 'utf8').replace(/\r\n /g, '');
     assert.ok(ics.includes('DTSTART;VALUE=DATE:' + today.replace(/-/g, '')) && ics.includes('mailto:' + email), 'a calendar invite with them invited');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.composer').count(), 0, 'Escape closes the email first');
+    assert.equal(await page.locator('dialog[open]').count(), 1, 'and keeps the to-do open');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('dialog[open]'));
     const checkins = () => page.locator(':is([data-tile=todo], [data-tile=attention]) .rowName', { hasText: 'Check in with ' + person }).count();
@@ -327,6 +330,7 @@ test('in the browser: check-ins on a grant: responsible people, dates from the s
     await page.fill('#planTitle', 'Support check-in');
     await page.press('#planTitle', 'Tab');
     await page.waitForFunction((rid) => (window.NAMI.app.store.get('records', rid).checkInPlan || '').includes('Support check-in'), id);
+    await page.click('#planOpen-dates');
     await page.click('#planAdd3');
     await page.waitForFunction((rid) => JSON.parse(window.NAMI.app.store.get('records', rid).checkInPlan).dates.length === 1, id);
     const plan1 = await page.evaluate((rid) => JSON.parse(window.NAMI.app.store.get('records', rid).checkInPlan), id);
@@ -334,6 +338,7 @@ test('in the browser: check-ins on a grant: responsible people, dates from the s
     assert.equal(plan1.dates[0], expect3, '3 months from the start date');
     await page.click('#planRepeat');
     await page.waitForFunction((rid) => JSON.parse(window.NAMI.app.store.get('records', rid).checkInPlan).dates.length > 1, id);
+    if (await page.isVisible('#planOpen-reminders')) await page.click('#planOpen-reminders');
     await page.click('#planRemindWeek');
     await page.waitForFunction((rid) => JSON.parse(window.NAMI.app.store.get('records', rid).checkInPlan).reminders.length > 0, id);
     // Undo takes the reminders back off
@@ -362,6 +367,52 @@ test('in the browser: check-ins on a grant: responsible people, dates from the s
     await page.waitForFunction(() => (window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates') || {}).value);
     const saved = await page.evaluate(() => JSON.parse(window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates').value)[0]);
     assert.ok(saved.body.includes('{name}') && saved.body.includes('{grant}') && saved.body.includes('Bring the sign-in sheets.'), 'saved with the fill-ins kept');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('in the browser: audit fixes: renaming staff follows them, hidden tiles keep their place, templates keep plain words', { skip: !playwright && 'Playwright is not installed' }, async () => {
+  const { browser, page, errors } = await openPage();
+  try {
+    // A renamed person keeps their records and to-dos
+    const old = await page.evaluate(() => window.NAMI.app.store.items('tasks').find((t) => t.assignedTo && t.assignedTo !== window.NAMI.app.state.who.person).assignedTo);
+    const pid = await page.evaluate((n) => window.NAMI.app.store.items('people').find((p) => p.person === n).id, old);
+    await page.click('#setupBtn');
+    await page.click('[data-setup=staff] summary');
+    await page.fill('#sf-name-' + pid, 'Renamed Person');
+    await page.press('#sf-name-' + pid, 'Tab');
+    await page.waitForFunction(() => window.NAMI.app.store.items('tasks').some((t) => t.assignedTo === 'Renamed Person'));
+    assert.equal(await page.evaluate((n) => window.NAMI.app.store.items('tasks').filter((t) => t.assignedTo === n).length, old), 0, 'no to-do keeps the old name');
+    await page.click('.toast .link');
+    await page.waitForFunction((n) => window.NAMI.app.store.items('people').some((p) => p.person === n), old);
+    assert.ok(await page.evaluate((n) => window.NAMI.app.store.items('tasks').some((t) => t.assignedTo === n), old), 'Undo puts every name back');
+
+    // Hide To-do, move Needs attention down with the keyboard: it passes the hidden tile
+    await page.click('[data-setup=layout] summary');
+    await page.uncheck('#showTile-todo');
+    await page.click('#homeBtn');
+    await page.waitForSelector('[data-tile=attention]');
+    const before = await page.evaluate(() => window.NAMI.app.state.layout.order.slice());
+    await page.focus('[data-tile=attention] .handle');
+    await page.keyboard.press('ArrowDown');
+    const after = await page.evaluate(() => window.NAMI.app.state.layout.order.slice());
+    assert.equal(after.indexOf('todo'), before.indexOf('todo'), 'the hidden tile keeps its place');
+    assert.ok(after.indexOf('attention') > after.indexOf('pipeline'), 'it moved past the next shown tile');
+
+    // Template words: "there" never becomes a fill-in
+    const id = await openFirstRecord(page);
+    if ((await page.getAttribute('[data-section=tasks]', 'open')) === null) await page.click('[data-section=tasks] summary');
+    await page.fill('#newTaskTitle', 'Nobody yet');
+    await page.selectOption('#newTaskWho', '').catch(() => page.fill('#newTaskWho', ''));
+    await page.click('#addTask');
+    await page.waitForSelector('#emailReminder');
+    await page.click('#emailReminder');
+    await page.fill('#mailBody', 'Is there anything blocking?');
+    await page.click('#mailSaveAs');
+    await page.fill('#mailSaveName', 'Plain');
+    await page.click('#mailSaveTemplate');
+    await page.waitForFunction(() => (window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates') || {}).value);
+    assert.equal(await page.evaluate(() => JSON.parse(window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates').value)[0].body), 'Is there anything blocking?');
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });

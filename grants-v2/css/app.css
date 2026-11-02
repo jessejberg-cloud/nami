@@ -356,3 +356,32 @@ a.btnLink:hover { background: #e7eef8; }
 .composer { display: grid; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; }
 a.btnPrimary { background: var(--nami-blue); color: #fff; border: 0; font-weight: 700; }
 a.btnPrimary:hover { background: var(--nami-blue-dark); }
+
+/* ---------- audit, Nov 2 ---------- */
+.filterPanel { display: block; }
+.filterGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.moreFilters { margin-top: 10px; }
+.moreFilters summary { cursor: pointer; color: var(--nami-blue); font-weight: 700; padding: 6px 0; }
+.moreFilters[open] summary { margin-bottom: 8px; }
+:root { --s-Active: #00727d; }
+.tile .stamp { font-size: .8rem; }
+@media (max-width: 700px) {
+  /* Phone: name and title on one row, then who and the gear, so the page starts sooner */
+  .brandBand .top { padding-top: 10px; padding-bottom: 8px; gap: 6px 10px; }
+  .brandMark { font-size: 1.3rem; }
+  .brandBand h1 { font-size: 1.15rem; order: 0; flex-basis: auto; margin-left: 4px; }
+  .brandBand .who { order: 2; margin-left: 0; flex: 1 1 auto; }
+  .brandBand .who select { max-width: 60vw; }
+  .gearBtn { order: 3; }
+  /* Room for a finger */
+  .toggle:has(input[type=checkbox]), label:has(> input[type=checkbox]) { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+  input[type=checkbox] { width: 22px; height: 22px; flex: none; }
+  .plus, .gearBtn, .handle { min-width: 44px; min-height: 44px; }
+  .check { width: 36px; height: 36px; }
+  .feedTools .link, .mini .link, .closeButtons .link { min-height: 44px; display: inline-flex; align-items: center; }
+}
+.planMore { display: grid; gap: 8px; padding: 8px 0 4px; }
+.builtIns li { color: var(--quiet); }
+.fields > .wide { grid-column: 1 / -1; }
+.planBlock .detailActions, .composer .detailActions, .meetForm .detailActions, .taskPart .detailActions { justify-content: flex-start; align-items: center; }
+.planBlock > .fields { grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }

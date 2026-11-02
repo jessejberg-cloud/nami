@@ -271,8 +271,19 @@
   }
 
   function buildFilterPanel() {
-    var panel = $('filterPanel');
-    panel.innerHTML = '';
+    var outer = $('filterPanel');
+    outer.innerHTML = '';
+    // The four most used show first; the rest wait under More filters (open when one is in use)
+    var FIRST = ['year', 'status', 'program', 'owner'];
+    var moreBox = el('div', { class: 'filterGrid' });
+    var more = el('details', { id: 'moreFilters', class: 'moreFilters' }, [el('summary', { text: 'More filters' }), moreBox]);
+    more.addEventListener('toggle', function () { state.moreFilters = more.open; });
+    var firstBox = el('div', { class: 'filterGrid' });
+    var panel = { appendChild: function (node) {
+      var key = node.querySelector('[data-filter]').getAttribute('data-filter');
+      (FIRST.indexOf(key) !== -1 ? firstBox : moreBox).appendChild(node);
+      if (FIRST.indexOf(key) === -1 && state.filters[key]) more.open = true;
+    } };
     var selects = FILTERS.slice(), dates = ['from', 'to', 'applyFrom', 'applyTo'];
     // Custom fields of type choice, yes or no, or date get a filter of their own
     customCols().filter(S.filterable).forEach(function (c) {
@@ -297,6 +308,9 @@
       inp.addEventListener('change', function () { setFilter(key, inp.value); });
       panel.appendChild(el('div', { class: 'field' }, [el('label', { for: id, text: filterLabel(key) }), inp]));
     });
+    if (state.moreFilters) more.open = true;
+    outer.appendChild(firstBox);
+    outer.appendChild(more);
   }
 
   // Filters on custom fields that are gone, or whose filter was switched off, stop counting
@@ -445,7 +459,7 @@
     var v = state.list;
     var items = filtered(today).filter(v.test);
     listEl.appendChild(el('div', { class: 'listHead' }, [
-      el('button', { type: 'button', class: 'link', text: '← Home', onclick: function () { showHome(); } }),
+      el('button', { type: 'button', class: 'link', text: '⌂ Home', onclick: function () { showHome(); } }),
       el('h2', { text: v.title })
     ]));
     var statuses = v.statuses || ORDER.concat(['Archived']);
@@ -522,8 +536,17 @@
     var by = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
     if (!by) return;
     e.preventDefault();
-    var next = S.moveTile(state.layout, key, by);
-    if (next.order.join() !== state.layout.order.join()) setLayout(next, tileName(key) + ' moved.');
+    // Moves past hidden tiles, which keep their own places
+    var shown = state.layout.order.filter(function (k) { return !state.layout.hidden[k]; });
+    var i = shown.indexOf(key), j = Math.max(0, Math.min(shown.length - 1, i + by));
+    if (i === -1 || i === j) return;
+    shown.splice(j, 0, shown.splice(i, 1)[0]);
+    setLayout({ order: withHidden(shown), collapsed: state.layout.collapsed, hidden: state.layout.hidden }, tileName(key) + ' moved.');
+  }
+  // The full order from a new order of the shown tiles: hidden tiles stay where they were
+  function withHidden(shown) {
+    var rest = shown.slice();
+    return state.layout.order.map(function (k) { return state.layout.hidden[k] ? k : rest.shift(); });
   }
 
   // Dragging the dots, or pressing and holding the tile's heading, lifts a tile; it follows the
@@ -582,6 +605,7 @@
       lifted = false;
       me.classList.remove('lifted'); document.body.classList.remove('moving');
       var order = Array.prototype.map.call(grid.querySelectorAll(':scope > [data-tile]'), function (t) { return t.getAttribute('data-tile'); });
+      order = withHidden(order);
       if (cancel || order.join() === state.layout.order.join()) { render(); return; }
       setLayout({ order: order, collapsed: state.layout.collapsed, hidden: state.layout.hidden }, tileName(key) + ' moved.');
     }
@@ -638,7 +662,7 @@
     });
     recs.forEach(function (r) {
       var plan = parsePlan(r.checkInPlan);
-      if (!plan.dates.length && !plan.reminders.length) return;
+      if ((!plan.dates.length && !plan.reminders.length) || r.status === 'Archived' || !isEditor()) return;
       if (mineOnly && r.owner !== me() && plan.people.indexOf(me()) === -1) return;
       var title = plan.title || 'Check-in: ' + r.name;
       if (auto('checkins')) plan.dates.forEach(function (d) {
@@ -1215,7 +1239,9 @@
   $('add').addEventListener('click', openNew);
   function openNew() {
     state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
-    var name = el('input', { id: 'addName', autocomplete: 'off' });
+    state.drafts = state.drafts || {};
+    var name = el('input', { id: 'addName', autocomplete: 'off', value: state.drafts.newName || '' });
+    name.addEventListener('input', function () { state.drafts.newName = name.value; });
     var type = el('select', { id: 'addType' }, [el('option', { text: 'Grant' }), el('option', { text: 'County contract' })]);
     var form = el('form', { id: 'addForm', class: 'fields' }, [
       el('div', { class: 'field wide' }, [el('label', { for: 'addName', text: label('name') }), name]),
@@ -1228,6 +1254,7 @@
       var v = name.value.trim();
       if (!v) { name.focus(); return; }
       store.add('records', { name: v, recordType: type.value }, { me: me() }).then(function (r) {
+        delete state.drafts.newName;
         render(); openDetail(r.id, 'status');
         toast('Added.', { list: 'records', id: r.id, added: true });
       }).catch(showProblem);
@@ -1250,6 +1277,14 @@
     ]);
   }
   function closeDetail() { state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null; if (dialog.open) dialog.close(); }
+  // Escape inside an email, meeting or new-field form closes just that form
+  dialog.addEventListener('cancel', function (e) {
+    var inner = dialog.querySelector('.composer, .meetForm, .addField form, .whichFor, .planMore:not([hidden])');
+    if (!inner) return;
+    e.preventDefault();
+    var out = Array.prototype.filter.call(inner.querySelectorAll('button'), function (b) { return /^(Cancel|Close)$/.test(b.textContent.trim()); })[0];
+    if (out) out.click(); else inner.hidden = true;
+  });
   dialog.addEventListener('close', function () {
     var was = state.openId, wasTask = state.openTaskId, wasWatch = state.openWatchId, wasFeed = state.openFeedId;
     state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
@@ -1401,7 +1436,11 @@
         if (list === 'feeds') { if (dialog.open && state.openFeedId === r.id) { if (key === 'type') openFeed(r.id, '#f-type'); else dialog.querySelector('#detailName').textContent = r.name || 'Feed'; } return; }
         if (!dialog.open || state.openId !== r.id) return;
         if (key === 'status') openDetail(r.id, 'status'); // the Archive reason field comes and goes
-        else { refreshHead(r); if (col.type === 'currency') input.value = shownValue(r[key]); }
+        else {
+          refreshHead(r); if (col.type === 'currency') input.value = shownValue(r[key]);
+          if (key === 'startDate' || key === 'endDate') { var pb = dialog.querySelector('#planBlock'); if (pb && isEditor()) pb.replaceWith(planBlock(r)); }
+          if (key === 'owner') { var tf = dialog.querySelector('#f-team'); if (tf) tf.replaceWith(teamField(r)); }
+        }
       }, function () { input.value = shownValue(r[key]); });
     });
     if (input.tagName === 'INPUT') input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
@@ -1446,7 +1485,7 @@
 
     var statusField = field(r, 'status', {
       wide: true,
-      optionText: function (s) { var n = statusNote(s); return statusName(s) + (n ? ' (' + n + ')' : ''); }
+      optionText: function (s) { return statusName(s); }
     });
 
     var tasks = store.items('tasks').filter(function (t) { return t.record === id; });
@@ -1579,7 +1618,6 @@
         t.checkIn ? el('button', { type: 'button', class: 'quietBtn', id: 'calendarCheckIn', onclick: function () { saveInvite(t, rec); } }, ['Add check-in to calendar']) : null
       ]), mailBox];
     if (t.assignedTo && !to) kids.push(el('p', { class: 'quiet', text: 'No email for ' + t.assignedTo + ' yet. Add one in Settings, Staff.' }));
-    if (!t.checkIn) kids.push(el('p', { class: 'quiet', text: 'Set a check-in date above to add it to your calendar.' }));
     kids.push(meetingBox(rec, t));
     return el('section', { class: 'taskPart', id: 'remindBlock' }, kids);
   }
@@ -1640,7 +1678,9 @@
         var done = plan.done.indexOf(key === 'dates' ? d : 'r' + d) !== -1;
         ul.appendChild(el('li', {}, [el('span', { text: (done ? '✓ ' : '') + niceDate(d) }),
           el('button', { type: 'button', class: 'link takeOff', 'aria-label': 'Take ' + niceDate(d) + ' off', title: 'Take off', text: '×', onclick: function () {
-            var p = {}; p[key] = parsePlan(store.get('records', r.id).checkInPlan)[key].filter(function (x) { return x !== d; });
+            var cur = parsePlan(store.get('records', r.id).checkInPlan);
+            var p = { done: cur.done.filter(function (x) { return x !== (key === 'dates' ? d : 'r' + d); }) };
+            p[key] = cur[key].filter(function (x) { return x !== d; });
             change(p, niceDate(d) + ' taken off.', '#plan-' + key + '-add');
           } })]));
       });
@@ -1693,6 +1733,17 @@
       addDates('reminders', cur.dates.map(function (d) { return derive.iso(derive.addDays(new Date(d + 'T12:00:00'), -7)); }), '#planRemindWeek');
     } }, ['A week before each check-in']);
 
+    // One button, then the choices; it stays open while dates are added
+    state.planOpen = state.planOpen || {};
+    function moreBox(key, text, rows) {
+      var id = 'planMore-' + key;
+      var inner = el('div', { class: 'planMore', id: id, hidden: !state.planOpen[key] }, (key === 'dates' ? [el('p', { class: 'quiet', text: 'From ' + (r.startDate ? 'the start date, ' + niceDate(base) : 'today') }) ] : []).concat(rows,
+        [el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { state.planOpen[key] = false; inner.hidden = true; btn.hidden = false; btn.focus(); } })]));
+      var btn = el('button', { type: 'button', class: 'quietBtn small', id: 'planOpen-' + key, hidden: !!state.planOpen[key], 'aria-controls': id, onclick: function () {
+        state.planOpen[key] = true; inner.hidden = false; btn.hidden = true; var f = inner.querySelector('button, input'); if (f) f.focus();
+      } }, [text]);
+      return el('div', {}, [btn, inner]);
+    }
     var mailBox = el('div', { class: 'mailBox wide' });
     var meetTitle = function () { return plan.title || 'Check-in: ' + r.name; };
     return el('div', { class: 'planBlock wide', id: 'planBlock' }, [
@@ -1702,14 +1753,15 @@
         el('div', { class: 'field' }, [el('label', { for: 'planLength', text: 'Length' }), len])]),
       el('h3', { text: 'Check-in dates' }),
       dateList('dates', 'Check-in dates'),
-      el('p', { class: 'quiet', text: 'From ' + (r.startDate ? 'the start date, ' + niceDate(base) : 'today') + ':' }),
-      el('div', { class: 'planRow' }, quick),
-      el('div', { class: 'planRow' }, [el('label', { for: 'planEvery', class: 'sr', text: 'How often' }), every, repeatBtn]),
-      el('div', { class: 'planRow' }, [el('label', { for: 'plan-dates-add', class: 'sr', text: 'A check-in date' }), pick, pickBtn]),
+      moreBox('dates', 'Add check-in dates', [
+        el('div', { class: 'planRow' }, quick),
+        el('div', { class: 'planRow' }, [el('label', { for: 'planEvery', class: 'sr', text: 'How often' }), every, repeatBtn]),
+        el('div', { class: 'planRow' }, [el('label', { for: 'plan-dates-add', class: 'sr', text: 'A check-in date' }), pick, pickBtn])]),
       el('h3', { text: 'Reminder email dates' }),
       dateList('reminders', 'Reminder email dates'),
-      el('div', { class: 'planRow' }, [weekBtn]),
-      el('div', { class: 'planRow' }, [el('label', { for: 'plan-reminders-add', class: 'sr', text: 'A reminder email date' }), rpick, rBtn]),
+      moreBox('reminders', 'Add reminder dates', [
+        el('div', { class: 'planRow' }, [weekBtn]),
+        el('div', { class: 'planRow' }, [el('label', { for: 'plan-reminders-add', class: 'sr', text: 'A reminder email date' }), rpick, rBtn])]),
       el('div', { class: 'detailActions' }, [
         el('button', { type: 'button', class: 'primary', id: 'planInvites', onclick: function () {
           var cur = parsePlan(store.get('records', r.id).checkInPlan);
@@ -1760,7 +1812,7 @@
     var body = el('textarea', { id: 'mailBody', rows: 9 });
     var to = o.people.map(staffEmail).filter(Boolean);
     var missing = o.people.filter(function (p) { return !staffEmail(p); });
-    var openLink = el('a', { class: 'primary btnLink btnPrimary', id: 'mailOpen' }, ['Open in Outlook']);
+    var openLink = el('a', { class: 'btnLink', id: 'mailOpen' }, ['Open in Outlook']);
     function link() { openLink.href = 'mailto:' + to.join(',') + '?subject=' + encodeURIComponent(subject.value) + '&body=' + encodeURIComponent(body.value); }
     function use(key) { var t = templates.filter(function (x) { return x.key === key; })[0]; subject.value = fillTemplate(t.subject, o); body.value = fillTemplate(t.body, o); link(); }
     sel.addEventListener('change', function () { use(sel.value); });
@@ -1781,7 +1833,7 @@
       el('div', { class: 'field' }, [el('label', { for: 'mailBody', text: 'Email' }), body]),
       el('div', { class: 'detailActions' }, [openLink,
         el('button', { type: 'button', class: 'link', id: 'mailSaveAs', text: 'Save as a template', onclick: function () { saveRow.hidden = false; saveName.focus(); } }),
-        el('button', { type: 'button', class: 'link', text: 'Close', onclick: function () { box.innerHTML = ''; } })]),
+        el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { box.innerHTML = ''; var b = box.parentNode && box.parentNode.querySelector('#emailReminder, #planEmail'); if (b) b.focus(); } })]),
       saveRow
     ]));
     use(first);
@@ -1793,7 +1845,9 @@
     ['to-dos', 'grant', 'check-in date', 'name', 'me', 'meeting', 'to-do'].forEach(function (k) {
       if (String(template || '').indexOf('{' + k + '}') === -1) return;
       var v = fillTemplate('{' + k + '}', o);
-      if (v && v.length > 2) out = out.split(v).join('{' + k + '}');
+      if (!v || v.length < 3 || ['there', 'this grant', 'our next check-in', '- (none open)', 'Check-in'].indexOf(v) !== -1) return;
+      var esc = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      out = out.replace(new RegExp('(^|[^A-Za-z0-9])' + esc + '(?![A-Za-z0-9])', 'g'), function (m, pre) { return pre + '{' + k + '}'; });
     });
     return out;
   }
@@ -1822,7 +1876,8 @@
         } })])
       ]);
     });
-    kids.unshift(el('p', { class: 'quiet wide', text: 'Fill-ins: {name}, {grant}, {check-in date}, {to-dos} (their open to-dos on the grant), {to-do}, {due}, {meeting}, {me}. Two built-in templates are always there too.' }));
+    kids.unshift(el('p', { class: 'quiet wide', text: 'Fill-ins: {name}, {grant}, {check-in date}, {to-dos}, {to-do}, {due}, {meeting}, {me}' }));
+    kids.unshift(el('ul', { class: 'plainList wide builtIns' }, BUILT_IN_TEMPLATES.map(function (t) { return el('li', { text: t.name + ' (built in)' }); })));
     var newName = el('input', { id: 'newTemplate', autocomplete: 'off' });
     var form = el('form', { class: 'customAdd wide' }, [el('div', { class: 'field' }, [el('label', { for: 'newTemplate', text: 'New template' }), newName]),
       el('button', { type: 'submit', class: 'primary', id: 'addTemplate' }, ['Add template'])]);
@@ -1866,7 +1921,7 @@
         el('div', { class: 'field' }, [el('label', { for: time.id, text: 'Start' }), time]),
         el('div', { class: 'field' }, [el('label', { for: len.id, text: 'Length' }), len]),
         el('fieldset', { class: 'field wide' }, [el('legend', { text: 'Invite' })].concat(boxes)),
-        el('div', { class: 'detailActions wide' }, [el('button', { type: 'submit', class: 'primary', id: 'meetSave' }, ['Make the invite']),
+        el('div', { class: 'detailActions wide' }, [el('button', { type: 'submit', class: 'quietBtn', id: 'meetSave' }, ['Make the invite']),
           el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { closed(); box.querySelector('#meetBtn').focus(); } })])
       ]);
       form.addEventListener('submit', function (e) {
@@ -1965,6 +2020,10 @@
     var form = null;
     if (canLog) {
       var text = el('textarea', { id: 'commentText', rows: 2 });
+      // A comment half written stays, even if the view closes
+      state.drafts = state.drafts || {};
+      text.value = state.drafts['comment-' + t.id] || '';
+      text.addEventListener('input', function () { state.drafts['comment-' + t.id] = text.value; });
       form = el('form', { class: 'commentForm' }, [el('label', { for: 'commentText', class: 'sr', text: 'Comment' }), text,
         el('button', { type: 'submit', class: 'quietBtn', id: 'addComment' }, ['Add comment'])]);
       form.addEventListener('submit', function (e) {
@@ -1972,6 +2031,7 @@
         var c = text.value.trim();
         if (!c) { text.focus(); return; }
         store.add('progress', { task: t.id, step: '', done: false, comment: c, date: derive.iso(new Date()) }).then(function (item) {
+          delete state.drafts['comment-' + t.id];
           render(); openTask(t.id, '#commentText');
           toast('Comment added.', { list: 'progress', id: item.id, added: true, focus: '#commentText' });
         }).catch(showProblem);
@@ -1989,7 +2049,8 @@
 
   function addTaskForm(r) {
     var input = el('input', { id: 'newTaskTitle', autocomplete: 'off' });
-    var who = el('input', { id: 'newTaskWho', autocomplete: 'off', list: 'peopleList', value: me() });
+    var who = el('select', { id: 'newTaskWho' }, [el('option', { value: '', text: '' })].concat(staffNames().map(function (p) { return el('option', { value: p, text: p }); })));
+    who.value = me();
     var due = el('input', { id: 'newTaskDue', type: 'date' });
     var form = el('form', { class: 'customAdd wide' }, [
       el('div', { class: 'field' }, [el('label', { for: 'newTaskTitle', text: 'New to-do' }), input]),
@@ -2229,7 +2290,7 @@
     return el('div', { class: 'field' }, [el('label', { for: id, text: lab || item.text }), inp]);
   }
 
-  var setupOpen = { tiles: true };
+  var setupOpen = {};
   function setupSection(key, title, kids) {
     var d = el('details', { class: 'more', 'data-setup': key, open: !!setupOpen[key] }, [el('summary', { text: title }), el('div', { class: 'fields' }, kids)]);
     d.addEventListener('toggle', function () { setupOpen[key] = d.open; });
@@ -2238,7 +2299,7 @@
 
   function renderSetup() {
     listEl.appendChild(el('div', { class: 'listHead' }, [
-      el('button', { type: 'button', class: 'link', text: '← Home', onclick: function () { showHome(); } }),
+      el('button', { type: 'button', class: 'link', text: '⌂ Home', onclick: function () { showHome(); } }),
       el('h2', { text: 'Settings' })
     ]));
     var box = el('div', { class: 'list setup' });
@@ -2280,7 +2341,6 @@
       });
       return el('label', { class: 'toggle wide autoRow' }, [cb, a.text + (a.later ? ' (' + a.later + ')' : '')]);
     });
-    kids.push(el('p', { class: 'quiet wide', text: 'These switches are the same for everyone.' }));
     return kids;
   }
 
@@ -2297,7 +2357,6 @@
       });
       return el('label', { class: 'toggle' }, [cb, tileName(t.key)]);
     });
-    kids.push(el('p', { class: 'quiet wide', text: 'These choices are kept on this computer, for you.' }));
     kids.push(el('button', { type: 'button', class: 'quietBtn', id: 'resetLayout', onclick: function () { setLayout(null, 'Layout back to the start.'); } }, ['Reset layout']));
     return kids;
   }
@@ -2307,6 +2366,30 @@
   function refreshWho() {
     if (state.signedInAs) state.who = A.whoIs(rawStore.items('people'), state.signedInAs, { byEmailOnly: auth.mode === 'microsoft' });
   }
+  // A new name for someone on Staff follows them everywhere: Owner, Team, Check-ins and
+  // their to-dos, so their own work stays theirs. One Undo puts it all back.
+  function renamePerson(p, name, focus) {
+    var old = p.person;
+    var swap = function (list) { return list.map(function (x) { return x === old ? name : x; }); };
+    var jobs = [['people', p.id, { person: name }]];
+    store.items('records').forEach(function (r) {
+      var ch = {};
+      if (r.owner === old) ch.owner = name;
+      var team = splitPeople(r.team); if (team.indexOf(old) !== -1) ch.team = swap(team).join('; ');
+      var plan = parsePlan(r.checkInPlan); if (plan.people.indexOf(old) !== -1) { plan.people = swap(plan.people); ch.checkInPlan = JSON.stringify(plan); }
+      if (Object.keys(ch).length) jobs.push(['records', r.id, ch]);
+    });
+    store.items('tasks').forEach(function (t) { if (t.assignedTo === old) jobs.push(['tasks', t.id, { assignedTo: name }]); });
+    var steps = [];
+    state.focusNext = focus;
+    jobs.reduce(function (pr, j) {
+      return pr.then(function () { return store.update(j[0], j[1], j[2]).then(function (res) { steps.unshift({ list: j[0], before: res.before }); }); });
+    }, Promise.resolve()).then(function () {
+      refreshWho(); render();
+      toast(old + ' is now ' + name + (jobs.length > 1 ? ', on every record and to-do.' : '.'), { steps: steps, focus: '#' + focus });
+    }).catch(function (e) { refreshWho(); render(); toast(e.message, steps.length ? { steps: steps } : null); });
+  }
+
   function staffEditor() {
     var programs = settingList('programs');
     var people = store.items('people').slice().sort(function (a, b) { return String(a.person).localeCompare(String(b.person)); });
@@ -2321,7 +2404,7 @@
       // Your own row: another editor changes your name, email and access, so nobody locks themselves out
       var self = !!state.who && p.person === state.who.person;
       var nameIn = el('input', { id: 'sf-name-' + p.id, autocomplete: 'off', value: p.person || '', disabled: self });
-      nameIn.addEventListener('change', function () { var v = nameIn.value.trim(); if (v) save({ person: v }, 'Saved.', nameIn.id); else nameIn.value = p.person || ''; });
+      nameIn.addEventListener('change', function () { var v = nameIn.value.trim(); if (v && v !== p.person) renamePerson(p, v, nameIn.id); else nameIn.value = p.person || ''; });
       var mailIn = el('input', { id: 'sf-email-' + p.id, type: 'email', autocomplete: 'off', value: p.email || '', disabled: self && !!p.email });
       mailIn.addEventListener('change', function () { save({ email: mailIn.value.trim() }, 'Saved.', mailIn.id); });
       var roleSel = el('select', { id: 'sf-role-' + p.id, disabled: self }, [el('option', { value: 'Editor', text: 'Can edit' }), el('option', { value: 'Viewer', text: 'Can view' })]);
@@ -2329,7 +2412,8 @@
       roleSel.addEventListener('change', function () { save({ role: roleSel.value }, p.person + (roleSel.value === 'Editor' ? ' can edit.' : ' can view.'), roleSel.id); });
       var mine = splitPeople(p.programs);
       var allOn = !mine.length || mine.some(function (x) { return /^all$/i.test(x); });
-      var progBoxes = ['All programs'].concat(programs).map(function (prog, i) {
+      var theirs = programs.concat(allOn ? [] : mine.filter(function (x) { return programs.indexOf(x) === -1; }));
+      var progBoxes = ['All programs'].concat(theirs).map(function (prog, i) {
         var cb = el('input', { type: 'checkbox', id: 'sf-prog-' + p.id + '-' + i });
         cb.checked = i === 0 ? allOn : !allOn && mine.indexOf(prog) !== -1;
         cb.addEventListener('change', function () {

@@ -106,6 +106,7 @@ test('in the browser: tiles, filters, toggle, To-do and full lists', { skip: !pl
   const pipelineTotal = async () => (await page.locator('[data-tile=pipeline] .count').allTextContents()).reduce((a, b) => a + Number(b), 0);
   const before = await pipelineTotal();
   await page.click('#filtersBtn');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
   const selects = ['year', 'status', 'program', 'funder', 'grantType', 'owner', 'recordType'];
   for (const k of selects) {
     const opts = await page.$$eval(`#flt-${k} option`, (os) => os.map((o) => o.value).filter(Boolean));
@@ -191,6 +192,8 @@ test('in the browser: tiles, filters, toggle, To-do and full lists', { skip: !pl
   await page.click('[data-tile=awards] [data-view="Award year"]');
   const allYears = await bars();
   if (await page.isHidden('#filterPanel')) await page.click('#filtersBtn');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
+  if ((await page.getAttribute('#moreFilters', 'open')) === null) await page.click('#moreFilters summary');
   await page.selectOption('#flt-year', '2025');
   const in2025 = await bars();
   Object.keys(in2025).forEach((yr) => { if (allYears[yr]) assert.equal(in2025[yr], allYears[yr], yr + ' total unchanged by the Year filter'); });
