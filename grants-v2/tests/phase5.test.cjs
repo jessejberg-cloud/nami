@@ -117,7 +117,8 @@ test('in the browser: a viewer cannot edit records but can log progress', { skip
   assert.ok(await page.isHidden('#setupBtn'), 'no Labels and fields for viewers');
   assert.ok(await page.isHidden('#reset'), 'no Start over for viewers');
   assert.equal(await page.evaluate(() => window.NAMI.app.store.reset().then(() => 'reset', (e) => e.message)), 'Only editors can change this.');
-  assert.equal(await page.locator('[data-tile=attention] .check, [data-tile=todo] .check').count(), 0, 'no Mark done for viewers');
+  const canFinish = await page.evaluate(() => window.NAMI.app.store.items('tasks').filter((t) => { const r = t.record ? window.NAMI.app.store.get('records', t.record) : null; return !t.done && window.NAMI.access.can(window.NAMI.app.state.who, 'log', t, r); }).length);
+  assert.ok(await page.locator('[data-tile=attention] .check, [data-tile=todo] .check').count() <= canFinish, 'Mark done only on to-dos a viewer can log');
 
   // Program view: only Sam's programs (and records with none), with one tap to see everything
   const shown = async () => page.evaluate(() => Array.from(document.querySelectorAll('[data-tile=pipeline] .mini .link')).map((a) => a.textContent));

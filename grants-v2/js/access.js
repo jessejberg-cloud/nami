@@ -4,7 +4,7 @@
 
     whoIs(people, signedIn, o)  the People row for a signed-in { name, email }:
                                 { person, email, role, programs, all, listed }
-    can(who, action, task)      'edit' (records, tasks, labels, settings) for editors;
+    can(who, action, task, rec) 'edit' (records, tasks, labels, settings) for editors;
                                 'log' (check off steps, comment) for editors and the task's own person
     inPrograms(who, record)     true when a record belongs to one of the person's programs
                                 (records with no program show to everyone)
@@ -33,10 +33,11 @@
     return { person: row.person, email: row.email || email, role: row.role === 'Editor' ? 'Editor' : 'Viewer', programs: all ? [] : programs, all: all, listed: true };
   }
 
-  function can(who, action, task) {
+  function can(who, action, task, rec) {
     if (!who) return false;
     if (who.role === 'Editor') return true;
-    if (action === 'log') return !!(task && task.assignedTo && task.assignedTo === who.person);
+    // The person assigned, and the grant's Owner and Team, comment and check off steps
+    if (action === 'log') return !!(task && ((task.assignedTo && task.assignedTo === who.person) || (rec && onTeam(who.person, rec))));
     return false;
   }
 
@@ -58,7 +59,7 @@
       var who = getWho();
       if (listKey === 'progress') {
         var task = store.get('tasks', fields && fields.task);
-        if (!can(who, 'log', task)) return no();
+        if (!can(who, 'log', task, task && task.record ? store.get('records', task.record) : null)) return no();
         return store.add(listKey, Object.assign({}, fields, { person: who.person }), ctx);
       }
       return can(who, 'edit') ? store.add(listKey, fields, ctx) : no();
@@ -82,6 +83,8 @@
     var rows = (progress || []).filter(function (p) { return p.task === task.id; }).sort(function (a, b) { return a.id - b.id; });
     var latest = {};
     rows.forEach(function (p) { if (p.step) latest[p.step] = p; });
+    // "__done": a whole to-do marked done (or not) by someone who logs progress rather than editing
+    var fin = latest.__done;
     var steps = String(task.steps || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean).map(function (text) {
       var p = latest[text];
       return { text: text, done: !!(p && p.done), by: p && p.done ? p.person : '', date: p && p.done ? p.date : '' };
@@ -89,6 +92,7 @@
     return {
       steps: steps,
       done: steps.filter(function (s) { return s.done; }).length,
+      finished: fin ? { done: !!fin.done, by: fin.person || '', date: fin.date || '' } : null,
       comments: rows.filter(function (p) { return String(p.comment || '').trim(); })
     };
   }

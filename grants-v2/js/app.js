@@ -622,6 +622,12 @@
   function taskRecordPasses(t, ids) { return !t.record || ids[t.record]; }
 
   function stepsDone(t) { return A.stepState(t, store.items('progress')).done; }
+  // Done: by an editor (the to-do itself), or by its person or the grant's team (a Progress row)
+  function isDone(t) {
+    var f = A.stepState(t, store.items('progress')).finished;
+    return f ? f.done : !!t.done;
+  }
+  function canLogTask(t) { return A.can(state.who, 'log', t, t.record ? store.get('records', t.record) : null); }
 
   // Everything with a date that needs doing: tasks, apply-by dates, ended awards.
   // recsAll: the same records without the program view, so a person's own tasks and records always show
@@ -632,7 +638,7 @@
     var t = derive.iso(today), soon = derive.iso(derive.addDays(today, dueDays()));
     var items = [];
     store.items('tasks').forEach(function (task) {
-      if (task.done) return;
+      if (isDone(task)) return;
       if (!taskRecordPasses(task, ids) && !(task.assignedTo === me() && taskRecordPasses(task, idsAll))) return;
       if (mineOnly && task.assignedTo !== me()) return;
       var rec = task.record ? store.get('records', task.record) : null;
@@ -653,7 +659,7 @@
     // Review: a watched cycle's month, or a record's watch date, has arrived. Watch-list rows
     // belong to nobody, so My to-do shows only the person's own records here.
     if (auto('checkins')) store.items('tasks').forEach(function (task) {
-      if (task.done || !task.checkIn || task.checkIn > soon) return;
+      if (isDone(task) || !task.checkIn || task.checkIn > soon) return;
       var rec = task.record ? store.get('records', task.record) : null;
       if (rec && !ids[rec.id]) return;
       if (mineOnly && task.assignedTo !== me() && !(rec && rec.owner === me())) return;
@@ -724,7 +730,7 @@
         }).catch(function (e) { toast(e.message); });
       } }, [icon('check')]));
     }
-    if (it.kind === 'task' && isEditor()) {
+    if (it.kind === 'task' && (isEditor() || canLogTask(it.task))) {
       kids.push(el('button', { type: 'button', class: 'check', 'aria-label': 'Mark done: ' + it.title, title: 'Mark done', onclick: function () { markDone(it.task); } }, [icon('check')]));
     }
     kids.push(main);
@@ -765,11 +771,29 @@
     p.then(function (undo) { render(); toast('Done for now.', undo); }).catch(function (e) { console.error(e); toast('That did not save.'); });
   }
 
-  function markDone(task) {
-    store.update('tasks', task.id, { done: true }).then(function (res) {
-      render();
-      toast('Done: ' + task.title + '.', { list: 'tasks', before: res.before });
-    });
+  function markDone(task) { finishTask(task, true, null); }
+
+  // Editors mark the to-do itself; its person and the grant's team add a Progress row,
+  // which their SharePoint permissions allow. Either way there is Undo.
+  function finishTask(t, done, after) {
+    var p;
+    if (isEditor()) {
+      p = store.update('tasks', t.id, { done: done }).then(function (res) {
+        var undo = { list: 'tasks', before: res.before };
+        // a done mark left by the team is set to match, so the two never disagree
+        var f = A.stepState(t, store.items('progress')).finished;
+        if (f && f.done !== done) return store.add('progress', { task: t.id, step: '__done', done: done, comment: '', date: derive.iso(new Date()) })
+          .then(function (row) { return { steps: [{ list: 'progress', id: row.id, added: true }, undo] }; });
+        return undo;
+      });
+    } else {
+      p = store.add('progress', { task: t.id, step: '__done', done: done, comment: '', date: derive.iso(new Date()) })
+        .then(function (row) { return { list: 'progress', id: row.id, added: true }; });
+    }
+    p.then(function (undo) {
+      render(); if (after) after();
+      toast(done ? 'Done: ' + (t.title || 'to-do') + '.' : 'Back on the list.', undo);
+    }).catch(function (e) { showProblem(e); toast(e.message); });
   }
 
   function renderHome(today) {
@@ -1571,7 +1595,7 @@
   function taskStatus(t) {
     var today = derive.iso(new Date()), soon = derive.iso(derive.addDays(new Date(), dueDays()));
     var out = [];
-    if (t.done) out.push(el('span', { class: 'chip s-Active' }, [icon('check'), 'Done']));
+    if (isDone(t)) out.push(el('span', { class: 'chip s-Active' }, [icon('check'), 'Done']));
     else if (t.dueDate && t.dueDate < today) out.push(tagEl({ text: 'Past due date', tone: 'attention' }));
     else if (t.dueDate && t.dueDate <= soon) out.push(tagEl({ text: 'Due soon', tone: 'attention' }));
     var meta = [t.type, t.dueDate ? 'Due ' + niceDate(t.dueDate) : '', t.assignedTo].filter(Boolean).join(' · ');
@@ -1598,8 +1622,8 @@
       editor ? section('taskDetails', [field(t, 'title', { list: 'tasks', wide: true }), field(t, 'type', { list: 'tasks' }), field(t, 'dueDate', { list: 'tasks' }),
         field(t, 'assignedTo', { list: 'tasks' }), field(t, 'checkIn', { list: 'tasks' }), field(t, 'steps', { list: 'tasks', wide: true })], !!focusSel) : null,
       editor ? remindBlock(t, rec) : null,
-      editor ? el('div', { class: 'detailActions' }, [
-        el('button', { type: 'button', id: 'taskDone', class: t.done ? 'quietBtn' : 'primary', onclick: function () { setTaskDone(t, !t.done); } }, [t.done ? 'Not done yet' : 'Mark done'])
+      (editor || canLogTask(t)) ? el('div', { class: 'detailActions' }, [
+        el('button', { type: 'button', id: 'taskDone', class: isDone(t) ? 'quietBtn' : 'primary', onclick: function () { setTaskDone(t, !isDone(t)); } }, [isDone(t) ? 'Not done yet' : 'Mark done'])
       ]) : null
     ]);
     mount(body, focusSel);
@@ -1819,7 +1843,7 @@
   function fillTemplate(text, o) {
     var firsts = o.people.map(function (p) { return String(p).split(' ')[0]; });
     var names = firsts.length > 1 ? firsts.slice(0, -1).join(', ') + ' and ' + firsts[firsts.length - 1] : firsts[0] || 'there';
-    var open = store.items('tasks').filter(function (t) { return o.rec && t.record === o.rec.id && !t.done && (!o.people.length || o.people.indexOf(t.assignedTo) !== -1); });
+    var open = store.items('tasks').filter(function (t) { return o.rec && t.record === o.rec.id && !isDone(t) && (!o.people.length || o.people.indexOf(t.assignedTo) !== -1); });
     var todos = open.length ? open.map(function (t) { return '- ' + (t.title || 'To-do') + (t.dueDate ? ', due ' + niceDate(t.dueDate) : '') + (o.people.length > 1 && t.assignedTo ? ' (' + t.assignedTo + ')' : ''); }).join('\n') : '- (none open)';
     var map = { name: names, grant: o.rec ? o.rec.name : 'this grant', 'check-in date': o.date ? niceDate(o.date) : 'our next check-in', 'to-dos': todos,
       'to-do': o.task ? o.task.title || 'to-do' : '', due: o.task && o.task.dueDate ? ', due ' + niceDate(o.task.dueDate) : '', me: me(), meeting: o.subject || (o.rec ? 'Check-in: ' + o.rec.name : 'Check-in') };
@@ -2004,7 +2028,7 @@
   function stepsBlock(t) {
     var state_ = A.stepState(t, store.items('progress'));
     if (!state_.steps.length) return null;
-    var canLog = A.can(state.who, 'log', t);
+    var canLog = A.can(state.who, 'log', t, t.record ? store.get('records', t.record) : null);
     var ul = el('ul', { class: 'steps' + (canLog ? '' : ' readOnly') });
     state_.steps.forEach(function (step, i) {
       var who = step.done ? el('span', { class: 'quiet who', text: [step.by, niceDate(step.date)].filter(Boolean).join(' · ') }) : null;
@@ -2033,7 +2057,7 @@
   }
 
   function commentsBlock(t) {
-    var canLog = A.can(state.who, 'log', t);
+    var canLog = A.can(state.who, 'log', t, t.record ? store.get('records', t.record) : null);
     var comments = A.stepState(t, store.items('progress')).comments;
     if (!comments.length && !canLog) return null;
     var ul = el('ul', { class: 'comments' });
@@ -2063,12 +2087,7 @@
     return el('section', { class: 'taskPart', id: 'taskComments' }, [el('h3', { text: 'Comments' }), comments.length ? ul : null, form]);
   }
 
-  function setTaskDone(t, done) {
-    store.update('tasks', t.id, { done: done }).then(function (res) {
-      render(); openTask(t.id, '#taskDone');
-      toast(done ? 'Done: ' + (t.title || 'to-do') + '.' : 'Back on the list.', { list: 'tasks', before: res.before });
-    }).catch(showProblem);
-  }
+  function setTaskDone(t, done) { finishTask(t, done, function () { openTask(t.id, '#taskDone'); }); }
 
   function addTaskForm(r) {
     var input = el('input', { id: 'newTaskTitle', autocomplete: 'off' });
@@ -2235,7 +2254,7 @@
     tasks.forEach(function (t) {
       var n = A.stepState(t, store.items('progress'));
       ul.appendChild(el('li', {}, [
-        el('button', { type: 'button', class: 'link', 'data-task': t.id, text: (t.done ? '✓ ' : '') + (t.title || 'To-do'), onclick: function () { openTask(t.id); } }),
+        el('button', { type: 'button', class: 'link', 'data-task': t.id, text: (isDone(t) ? '✓ ' : '') + (t.title || 'To-do'), onclick: function () { openTask(t.id); } }),
         el('span', { class: 'quiet', text: [t.type, niceDate(t.dueDate), t.assignedTo, n.done ? (n.done === 1 ? '1 step done' : n.done + ' steps done') : ''].filter(Boolean).join(' · ') })
       ]));
     });

@@ -458,3 +458,50 @@ test('in the browser: a grant opens as reading; Edit turns the boxes on; a new g
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });
+
+test('in the browser: the Owner and Team of a grant comment on, check off and finish any of its to-dos', { skip: !playwright && 'Playwright is not installed' }, async () => {
+  const { browser, page, errors } = await openPage();
+  try {
+    // As the editor: put Sam on a grant's Team and give it a to-do assigned to someone else
+    const ids = await page.evaluate(async () => {
+      const app = window.NAMI.app;
+      const rec = app.store.items('records').find((r) => r.owner !== 'Sam Okafor (sample)' && r.status !== 'Archived');
+      await app.store.update('records', rec.id, { team: 'Sam Okafor (sample)' });
+      const t = await app.store.add('tasks', { record: rec.id, title: 'Team to-do', assignedTo: 'Lee Tran (sample)', steps: 'One\nTwo', done: false });
+      return { rec: rec.id, task: t.id };
+    });
+    await page.selectOption('#whoSelect', 'Sam Okafor (sample)');
+    await page.waitForFunction(() => window.NAMI.app.state.who.person === 'Sam Okafor (sample)');
+    await page.evaluate((id) => window.NAMI.app.openTask(id), ids.task);
+    await page.waitForSelector('dialog[open] #taskDone');
+    // A comment
+    await page.fill('#commentText', 'On it with Lee');
+    await page.click('#addComment');
+    await page.waitForSelector('#taskComments li');
+    // A step
+    await page.locator('#taskSteps input[type=checkbox]').first().check();
+    await page.waitForFunction(() => window.NAMI.app.store.items('progress').some((p) => p.step === 'One' && p.done));
+    // Mark done adds a Progress row, not a change to the to-do
+    await page.click('#taskDone');
+    await page.waitForFunction(() => /Not done yet/.test(document.querySelector('#taskDone').textContent));
+    const row = await page.evaluate((id) => window.NAMI.app.store.items('progress').filter((p) => p.task === id && p.step === '__done').pop(), ids.task);
+    assert.equal(row.person, 'Sam Okafor (sample)');
+    assert.equal(row.done, true);
+    assert.equal(await page.evaluate((id) => window.NAMI.app.store.get('tasks', id).done, ids.task), false, 'the to-do itself is unchanged');
+    assert.match(await page.textContent('#taskStatus'), /Done/);
+    // Undo brings it back
+    await page.click('#toastUndo');
+    await page.waitForFunction((id) => !window.NAMI.app.store.items('progress').some((p) => p.task === id && p.step === '__done'), ids.task);
+    // Someone not on the Team, and not assigned, only reads
+    await page.selectOption('#whoSelect', 'Pat Lindqvist (sample)');
+    await page.waitForFunction(() => window.NAMI.app.state.who.person === 'Pat Lindqvist (sample)');
+    const patOnTeam = await page.evaluate((id) => { const r = window.NAMI.app.store.get('records', id); return r.owner === 'Pat Lindqvist (sample)'; }, ids.rec);
+    if (!patOnTeam && await page.evaluate(() => window.NAMI.app.state.who.role) === 'Viewer') {
+      await page.evaluate((id) => window.NAMI.app.openTask(id), ids.task);
+      await page.waitForSelector('dialog[open] #detailName');
+      assert.equal(await page.locator('#taskDone').count(), 0);
+      assert.equal(await page.locator('#commentText').count(), 0);
+    }
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
