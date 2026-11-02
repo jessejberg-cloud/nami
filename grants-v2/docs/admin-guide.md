@@ -23,10 +23,10 @@ To remove someone, delete their People row and take away their SharePoint permis
 
 ## Change words, dropdowns and fields
 
-- **Words on screen:** on the dashboard, editors open **Labels and fields** (bottom of the page). Type a new name in any box; clear the box to go back.
+- **Words on screen:** on the dashboard, editors press **Rename and fields** (top of the page). Type a new name in any box; clear the box to go back.
 - **Programs and grant types:** in the **Settings** list, edit the `programs` or `grantTypes` row. Separate choices with `;`.
 - **Due soon:** the `dueSoonDays` row in Settings (14 to start).
-- **A new field on every record:** Labels and fields, then **Your own fields**. The page adds the column to the Records list itself.
+- **A new field on every record:** **Rename and fields**, then **Your own fields**. The page adds the column to the Records list itself.
 
 ## Funding Watch
 

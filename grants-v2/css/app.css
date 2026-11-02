@@ -259,3 +259,9 @@ button.small { font-size: .85rem; padding: 4px 12px; }
 .todo.review { flex-wrap: wrap; }
 .reviewActions { flex-basis: 100%; display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 800px) { .watchCols { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Nov 2: Add and Rename in the top bar ---------- */
+.bar { flex-wrap: wrap; align-items: center; }
+.bar button { white-space: nowrap; }
+.search { flex: 1 1 240px; }
+@media (max-width: 700px) { .search { flex-basis: 100%; } .bar #add { flex: 1 1 auto; } }

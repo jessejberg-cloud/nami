@@ -10,11 +10,11 @@ Open `index.html` in a browser, straight from the folder; no server and no insta
 
 - The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; drag its six dots to move it (or focus them and use the arrow keys).
 - **Filters** narrow every tile. **Search** finds any record.
-- **Add** asks only for a name. Click a record to see every field; each saves when you leave it, with **Undo**.
+- **+ Add a grant or contract** asks only for a name. Click a record to see every field; each saves when you leave it, with **Undo**.
 - Click a task to check off its steps and add comments.
 - **Funding Watch** shows Grants.gov results (sample ones when opened from a folder) with **Add as Potentials**, your own feeds, and the watch list of funding cycles. When a cycle's month or a record's watch date arrives, a Review item shows in To-do.
 - **Signed in as** (top right) switches between the sample people: Morgan, Dana and Lee are editors; Sam and Pat are viewers of two programs each.
-- **Labels and fields** (footer, editors) renames anything and adds your own fields. **All lists** shows every list as stored. **Start the sample over** brings back the original sample.
+- **Rename and fields** (top bar, editors) renames anything and adds your own fields. **All lists** shows every list as stored. **Start the sample over** brings back the original sample.
 
 ## Sign-in
 
@@ -55,7 +55,7 @@ Netlify publishes this folder as it is (`netlify.toml`); there is no build step.
 - `js/sharepoint.js`: SharePoint mode over Microsoft Graph, and **Set up the lists**
 - `js/sample-data.js`: the fictional sample
 - `js/derive.js`: what is worked out, never stored: Active from dates, multi-year, Due soon and past-date notes
-- `js/app.js`: the home tiles, filters, full lists, the detail view and the Labels and fields page
+- `js/app.js`: the home tiles, filters, full lists, the detail view and the Rename and fields page
 - `js/settings.js`: labels, your own fields and the tile layout (plain logic, tested in Node)
 - `js/access.js`: who is signed in, editor or viewer, program views, task steps; guards every change
 - `js/auth.js`, `js/config.js`: Sample sign-in, and Microsoft sign-in once `config.js` is filled in

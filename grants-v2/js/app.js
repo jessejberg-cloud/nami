@@ -1603,7 +1603,7 @@
   function renderSetup() {
     listEl.appendChild(el('div', { class: 'listHead' }, [
       el('button', { type: 'button', class: 'link', text: '← Home', onclick: function () { showHome(); } }),
-      el('h2', { text: 'Labels and fields' })
+      el('h2', { text: 'Rename and fields' })
     ]));
     var box = el('div', { class: 'list setup' });
     S.labelGroups().forEach(function (g) {
