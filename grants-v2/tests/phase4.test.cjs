@@ -222,14 +222,13 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   await page.click('#toastUndo');
   assert.deepEqual(await order(), start);
 
-  // ---- Press and hold, then drag (archive onto County contracts, its neighbour)
+  // ---- Drag the dots (archive onto County contracts, its neighbour): it lifts at once
   await page.locator('[data-tile=archive] .handle').scrollIntoViewIfNeeded();
   const handle = await page.locator('[data-tile=archive] .handle').boundingBox();
   const target = await page.locator('[data-tile=contracts]').boundingBox();
   await page.mouse.move(handle.x + 10, handle.y + 10);
   await page.mouse.down();
-  await page.waitForTimeout(500);
-  assert.equal(await page.locator('.tile.lifted').count(), 1, 'lifted after holding');
+  assert.equal(await page.locator('.tile.lifted').count(), 1, 'lifted at once from the dots');
   await page.mouse.move(target.x + 60, target.y + 40, { steps: 8 });
   await page.mouse.up();
   const dragged = await order();
@@ -238,10 +237,10 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   await page.waitForSelector('body[data-loaded=yes]');
   assert.deepEqual(await order(), dragged, 'layout kept after reload');
 
-  // A quick press-and-move without holding does nothing
-  await page.locator('[data-tile=todo] .handle').scrollIntoViewIfNeeded();
-  const h2 = await page.locator('[data-tile=todo] .handle').boundingBox();
-  await page.mouse.move(h2.x + 10, h2.y + 10);
+  // On the heading, a quick press-and-move without holding does nothing (it may be a scroll or a click)
+  await page.locator('[data-tile=pipeline] .handle').scrollIntoViewIfNeeded();
+  const h2 = await page.locator('[data-tile=pipeline] .handle').boundingBox();
+  await page.mouse.move(h2.x - 120, h2.y + 10);
   await page.mouse.down();
   await page.mouse.move(h2.x - 300, h2.y + 200, { steps: 4 });
   await page.mouse.up();

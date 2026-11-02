@@ -440,7 +440,7 @@
     var head = el('header', { class: 'tileHead' }, [
       el('h2', {}, [el('button', { type: 'button', class: 'tileToggle', id: 'tile-' + key, 'aria-expanded': String(!shut), onclick: function () { toggleTile(key); } }, [icon('chevron'), name])]),
       shut ? null : (opts.head || null),
-      el('button', { type: 'button', class: 'handle', 'aria-label': 'Move ' + name, title: 'Press and hold to move', onkeydown: function (e) { moveByKey(e, key); } }, [icon('grip')])
+      el('button', { type: 'button', class: 'handle', 'aria-label': 'Move ' + name, title: 'Drag to move, or use the arrow keys', onkeydown: function (e) { moveByKey(e, key); } }, [icon('grip')])
     ]);
     head.addEventListener('pointerdown', function (e) { holdToMove(e, key); });
     return el('section', { class: 'tile' + (opts.wide ? ' wide' : '') + (shut ? ' shut' : ''), 'data-tile': key, 'aria-labelledby': 'tile-' + key }, [
@@ -480,8 +480,8 @@
     if (next.order.join() !== state.layout.order.join()) setLayout(next, tileName(key) + ' moved.');
   }
 
-  // Press and hold (on the handle or the tile's heading) lifts a tile; it follows the pointer
-  // and drops where it is let go. A quick tap or a scroll does nothing. Escape puts it back.
+  // Dragging the dots, or pressing and holding the tile's heading, lifts a tile; it follows the
+  // pointer and drops where it is let go. A scroll does nothing. Escape puts it back.
   var HOLD_MS = 350;
   function holdToMove(e, key) {
     if (e.button !== 0 || state.view !== 'home') return;
@@ -493,7 +493,10 @@
     if (!me) return;
     var sx = e.clientX, sy = e.clientY, lifted = false;
     var px = sx, py = sy, frame = null, lastOver = null, travelled = false;
-    var timer = setTimeout(function () { lifted = true; me.classList.add('lifted'); document.body.classList.add('moving'); frame = requestAnimationFrame(edge); }, HOLD_MS);
+    function lift() { lifted = true; me.classList.add('lifted'); document.body.classList.add('moving'); frame = requestAnimationFrame(edge); }
+    // The dots lift the tile at once; the heading (with a mouse) waits for a short hold, so a click still opens and closes it
+    var timer = null;
+    if (onHandle) { e.preventDefault(); lift(); } else timer = setTimeout(lift, HOLD_MS);
     // Near the top or bottom of the window the page scrolls, gently, so a tile can travel far
     function edge() {
       if (!lifted) return;

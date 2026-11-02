@@ -8,7 +8,7 @@ A one-page grants and county-contract dashboard for NAMI Southeast Wisconsin, bu
 
 Open `index.html` in a browser, straight from the folder; no server and no install. All records are fictional and kept only in this browser.
 
-- The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; its handle moves it (press and hold, or arrow keys).
+- The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; drag its six dots to move it (or focus them and use the arrow keys).
 - **Filters** narrow every tile. **Search** finds any record.
 - **Add** asks only for a name. Click a record to see every field; each saves when you leave it, with **Undo**.
 - Click a task to check off its steps and add comments.
