@@ -52,7 +52,7 @@
   function spType(type) {
     switch (type) {
       // Long text and web links: multiple lines (single-line text stops at 255 characters), plain, never HTML
-      case 'note': case 'url': return { text: { allowMultipleLines: true, linesForEditing: 6, textType: 'plain' } };
+      case 'note': case 'url': case 'people': return { text: { allowMultipleLines: true, linesForEditing: 6, textType: 'plain' } };
       case 'number': case 'lookup': return { number: {} };
       case 'currency': return { currency: { locale: 'en-us' } };
       case 'date': return { dateTime: { format: 'dateOnly' } };

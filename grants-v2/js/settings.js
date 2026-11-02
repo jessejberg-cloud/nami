@@ -150,7 +150,9 @@
     all.forEach(function (k) { if (order.indexOf(k) === -1) order.push(k); });
     var collapsed = {};
     Object.keys(saved.collapsed || {}).forEach(function (k) { if (all.indexOf(k) !== -1 && saved.collapsed[k]) collapsed[k] = true; });
-    return { order: order, collapsed: collapsed };
+    var hidden = {};
+    Object.keys(saved.hidden || {}).forEach(function (k) { if (all.indexOf(k) !== -1 && saved.hidden[k]) hidden[k] = true; });
+    return { order: order, collapsed: collapsed, hidden: hidden };
   }
 
   function moveTile(layout, key, by) {

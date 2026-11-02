@@ -88,7 +88,7 @@ test('in the browser: a + in Contact adds a field to just this record, or to eve
     assert.equal(await page.locator('[data-section=contact] #f-programOfficer').count(), 1, 'every record has it, in the same part');
     await page.keyboard.press('Escape');
 
-    // Rename and fields shows where it goes, and can move it
+    // Settings shows where it goes, and can move it
     await page.click('#setupBtn');
     if ((await page.getAttribute('[data-setup=custom]', 'open')) === null) await page.click('[data-setup=custom] summary');
     assert.equal(await page.inputValue('#cf-section-programOfficer'), 'contact');
@@ -123,16 +123,17 @@ test('in the browser: Home works from every screen', { skip: !playwright && 'Pla
     await page.waitForFunction(() => !document.querySelector('[data-tile=pipeline]'));
     await page.click('#homeBtn');
     await atHome();
-    // From Rename and fields, by the title
+    // From Settings, by the title
     await page.click('#setupBtn');
     await page.waitForFunction(() => !document.querySelector('[data-tile=pipeline]'));
     await page.click('#homeLink');
     await atHome();
     // From the add form
     await page.click('#add');
-    await page.click('#homeBtn');
+    await page.waitForSelector('dialog[open] #addName');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'addName', 'the new record opens in a pop-up, name first');
+    await page.click('dialog .dialogHome');
     await atHome();
-    assert.equal(await page.isHidden('#addForm'), true);
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });
@@ -167,6 +168,46 @@ test('in the browser: a to-do can be assigned and dated as it is added', { skip:
     const t = await page.evaluate((rid) => window.NAMI.app.store.items('tasks').find((x) => x.record === rid && x.title === 'Send site photos'), id);
     assert.equal(t.assignedTo, someone);
     assert.equal(t.dueDate, '2026-12-01');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('in the browser: Settings behind the gear: Staff, Programs, Layout; Owner and Team pick from Staff', { skip: !playwright && 'Playwright is not installed' }, async () => {
+  const { browser, page, errors } = await openPage();
+  try {
+    assert.equal(await page.getAttribute('#setupBtn', 'aria-label'), 'Settings');
+    await page.click('#setupBtn');
+    assert.equal(await page.textContent('.listHead h2'), 'Settings');
+    const open = async (k) => { if ((await page.getAttribute(`[data-setup=${k}]`, 'open')) === null) await page.click(`[data-setup=${k}] summary`); };
+
+    // Staff: add a person, give them a program
+    await open('staff');
+    await page.fill('#newStaffName', 'Rosa Diaz');
+    await page.fill('#newStaffEmail', 'rosa@example.org');
+    await page.click('#addStaff');
+    await page.waitForFunction(() => window.NAMI.app.store.items('people').some((p) => p.person === 'Rosa Diaz' && p.email === 'rosa@example.org'));
+    const rosa = await page.evaluate(() => window.NAMI.app.store.items('people').find((p) => p.person === 'Rosa Diaz').id);
+    await page.check(`#sf-prog-${rosa}-1`);
+    await page.waitForFunction((id) => !/all/i.test(window.NAMI.app.store.get('people', id).programs), rosa);
+
+    // Programs: add one
+    await open('programs');
+    await page.fill('#newProgram', 'Youth outreach');
+    await page.click('#addProgram');
+    await page.waitForFunction(() => window.NAMI.app.store.items('settings').find((s) => s.key === 'programs').value.includes('Youth outreach'));
+
+    // Layout: hide a tile
+    await open('layout');
+    await page.uncheck('#showTile-archive');
+    await page.click('#homeBtn');
+    await page.waitForSelector('[data-tile=pipeline]');
+    assert.equal(await page.locator('[data-tile=archive]').count(), 0, 'a hidden tile stays off the home page');
+
+    // Owner and Team pick from Staff
+    const id = await openFirstRecord(page);
+    assert.ok((await page.$$eval('#f-owner option', (os) => os.map((o) => o.value))).includes('Rosa Diaz'), 'Owner picks from Staff');
+    await page.locator('#f-team label', { hasText: 'Rosa Diaz' }).locator('input').check();
+    await page.waitForFunction((rid) => String(window.NAMI.app.store.get('records', rid).team || '').includes('Rosa Diaz'), id);
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });

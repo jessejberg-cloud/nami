@@ -345,7 +345,7 @@
 
   function matches(r, q) {
     if (!q) return true;
-    var hay = [r.name, r.funder, r.program, r.owner, r.grantType, r.comments, r.next, r.contactName, r.archiveReason]
+    var hay = [r.name, r.funder, r.program, r.owner, r.team, r.grantType, r.comments, r.next, r.contactName, r.archiveReason]
       .concat(customCols().filter(function (c) { return c.type !== 'yesno'; }).map(function (c) { return r[c.key]; })).join(' ').toLowerCase();
     return q.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) !== -1; });
   }
@@ -429,7 +429,6 @@
     state.view = 'home';
     state.list = null;
     if (state.query) { state.query = ''; $('search').value = ''; }
-    $('addForm').hidden = true;
     render();
     window.scrollTo(0, 0);
   }
@@ -473,7 +472,7 @@
     var c = Object.assign({}, state.layout.collapsed);
     state.opening = c[key] ? key : null;
     if (c[key]) delete c[key]; else c[key] = true;
-    setLayout({ order: state.layout.order, collapsed: c });
+    setLayout({ order: state.layout.order, collapsed: c, hidden: state.layout.hidden });
   }
 
   function moveByKey(e, key) {
@@ -541,7 +540,7 @@
       me.classList.remove('lifted'); document.body.classList.remove('moving');
       var order = Array.prototype.map.call(grid.querySelectorAll(':scope > [data-tile]'), function (t) { return t.getAttribute('data-tile'); });
       if (cancel || order.join() === state.layout.order.join()) { render(); return; }
-      setLayout({ order: order, collapsed: state.layout.collapsed }, tileName(key) + ' moved.');
+      setLayout({ order: order, collapsed: state.layout.collapsed, hidden: state.layout.hidden }, tileName(key) + ' moved.');
     }
     window.addEventListener('pointermove', move, { passive: false });
     window.addEventListener('pointerup', up);
@@ -574,7 +573,7 @@
         note: !task.dueDate ? '' : task.dueDate < t ? 'Past due date' : task.dueDate <= soon ? 'Due soon' : '' });
     });
     recs.forEach(function (r) {
-      if (mineOnly && r.owner !== me()) return;
+      if (mineOnly && !A.onTeam(me(), r)) return;
       if ((r.status === 'Upcoming' || r.status === 'Potentials') && r.deadline) {
         var note = r.deadline < t ? tagText({ key: 'applyPassed', text: 'Apply-by date passed' }) : r.deadline <= soon ? 'Due soon' : '';
         // Potentials only come up once their apply-by date is near, so To-do stays short
@@ -586,7 +585,7 @@
     });
     // Review: a watched cycle's month, or a record's watch date, has arrived. Watch-list rows
     // belong to nobody, so My to-do shows only the person's own records here.
-    W.reviewItems(mineOnly ? [] : store.items('watch'), recs.filter(function (r) { return !mineOnly || r.owner === me(); }), today).forEach(function (it) {
+    W.reviewItems(mineOnly ? [] : store.items('watch'), recs.filter(function (r) { return !mineOnly || A.onTeam(me(), r); }), today).forEach(function (it) {
       if (it.watch && it.watch.record) it.record = store.get('records', it.watch.record);
       items.push(it);
     });
@@ -740,7 +739,7 @@
     fillArchive();
     tiles.archive = (tile('archive', [el('label', {}, [el('span', { class: 'sr', text: 'Search ' + tileName('archive') }), aq]), archList]));
 
-    state.layout.order.forEach(function (k) { if (tiles[k]) grid.appendChild(tiles[k]); });
+    state.layout.order.forEach(function (k) { if (tiles[k] && !state.layout.hidden[k]) grid.appendChild(tiles[k]); });
     listEl.appendChild(grid);
     if (arch) { /* kept for the search box above */ }
   }
@@ -1106,14 +1105,12 @@
     renderFilterChips();
     if (!$('filterPanel').hidden) buildFilterPanel(); // names and custom fields may have changed
     var editor = isEditor();
-    if (!editor) { $('add').hidden = true; $('addForm').hidden = true; if (state.view === 'setup') state.view = 'home'; }
-    else if ($('addForm').hidden) $('add').hidden = false;
+    if (!editor) { $('add').hidden = true; if (state.view === 'setup') state.view = 'home'; }
+    else $('add').hidden = false;
     $('setupBtn').hidden = !editor;
     $('reset').hidden = !editor || onSharePoint;
     $('allLists').hidden = onSharePoint; // that page shows the sample
     renderWho();
-    document.querySelector('label[for=addName]').textContent = label('name');
-    document.querySelector('label[for=addType]').textContent = label('recordType');
     $('homeLink').textContent = document.title = T('page.title', 'Grants Dashboard');
     if (state.query) {
       state.view = 'list';
@@ -1133,21 +1130,33 @@
     render();
   });
 
-  $('add').addEventListener('click', function () {
-    $('addForm').hidden = false; $('add').hidden = true; $('addName').value = ''; $('addName').focus();
-  });
-  $('addCancel').addEventListener('click', closeAdd);
-  function closeAdd() { $('addForm').hidden = true; $('add').hidden = false; }
-
-  $('addForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var name = $('addName').value.trim();
-    if (!name) { $('addName').focus(); return; }
-    store.add('records', { name: name, recordType: $('addType').value }, { me: me() }).then(function (r) {
-      closeAdd(); render(); openDetail(r.id);
-      toast('Added.', { list: 'records', id: r.id, added: true });
+  // A new grant or contract opens in its own pop-up: the name first, then the whole record
+  $('add').addEventListener('click', openNew);
+  function openNew() {
+    state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
+    var name = el('input', { id: 'addName', autocomplete: 'off' });
+    var type = el('select', { id: 'addType' }, [el('option', { text: 'Grant' }), el('option', { text: 'County contract' })]);
+    var form = el('form', { id: 'addForm', class: 'fields' }, [
+      el('div', { class: 'field wide' }, [el('label', { for: 'addName', text: label('name') }), name]),
+      el('div', { class: 'field' }, [el('label', { for: 'addType', text: label('recordType') }), type]),
+      el('div', { class: 'detailActions wide' }, [el('button', { type: 'submit', class: 'primary' }, ['Save']),
+        el('button', { type: 'button', class: 'link', id: 'addCancel', text: 'Cancel', onclick: closeDetail })])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = name.value.trim();
+      if (!v) { name.focus(); return; }
+      store.add('records', { name: v, recordType: type.value }, { me: me() }).then(function (r) {
+        render(); openDetail(r.id, 'status');
+        toast('Added.', { list: 'records', id: r.id, added: true });
+      }).catch(showProblem);
     });
-  });
+    mount(el('div', { class: 'detailBody', 'data-new': 'yes' }, [
+      el('header', { class: 'detailHead' }, [el('h2', { id: 'detailName', text: 'New grant or contract' }), closeButtons()]),
+      el('p', { class: 'problem', hidden: true }),
+      form
+    ]), '#addName');
+  }
 
 
   // ---------- the detail view ----------
@@ -1194,6 +1203,32 @@
   }
 
   // A value as a viewer reads it; empty ones are left out so the record reads short
+  function staffNames() { return store.items('people').map(function (p) { return p.person; }).filter(Boolean).sort(); }
+  function splitPeople(v) { return String(v || '').split(';').map(function (s) { return s.trim(); }).filter(Boolean); }
+
+  // Team: everyone besides the owner who works on this record, picked from Staff
+  function teamField(r) {
+    var name = label('team');
+    var team = splitPeople(r.team);
+    if (!isEditor()) return readOnlyField({ type: 'people' }, 'team', team.join(', '), name, true);
+    var names = staffNames();
+    team.forEach(function (p) { if (names.indexOf(p) === -1) names.push(p); });
+    var boxes = names.filter(function (p) { return p !== r.owner; }).map(function (p, i) {
+      var cb = el('input', { type: 'checkbox', id: 'team-' + i, value: p });
+      cb.checked = team.indexOf(p) !== -1;
+      cb.addEventListener('change', function () {
+        var now = splitPeople(store.get('records', r.id).team).filter(function (x) { return x !== p; });
+        if (cb.checked) now.push(p);
+        store.update('records', r.id, { team: now.join('; ') }).then(function (res) {
+          render();
+          toast(cb.checked ? p + ' added to the team.' : p + ' taken off the team.', { list: 'records', before: res.before, focus: '#team-' + i });
+        }).catch(showProblem);
+      });
+      return el('label', { class: 'toggle teamPick' }, [cb, p]);
+    });
+    return el('fieldset', { class: 'field wide team', id: 'f-team' }, [el('legend', { text: name })].concat(boxes.length ? boxes : [el('span', { class: 'quiet', text: 'Add staff in Settings' })]));
+  }
+
   function readOnlyField(col, key, value, name, wide) {
     if (value === '' || value === undefined || value === null) return null;
     var linked = col.type === 'lookup' ? store.get(col.list || 'records', Number(value)) : null;
@@ -1230,6 +1265,12 @@
         input.appendChild(el('option', { value: String(x.id), text: x.name }));
       });
       input.value = value === '' ? '' : String(value);
+    } else if (col.type === 'person') {
+      input = el('select', { id: id }, [el('option', { value: '', text: '' })]);
+      var staff = staffNames();
+      staff.forEach(function (p) { input.appendChild(el('option', { value: p, text: p })); });
+      if (value && staff.indexOf(value) === -1) input.appendChild(el('option', { value: value, text: value }));
+      input.value = value;
     } else if (col.type === 'note') {
       input = el('textarea', { id: id, rows: key === 'links' ? 3 : 2 });
       input.value = value;
@@ -1347,6 +1388,7 @@
         archived ? field(r, 'archiveReason') : null,
         field(r, 'funder'),
         field(r, 'owner'),
+        teamField(r),
         field(r, 'recordType'),
         field(r, 'program'),
         field(r, 'grantType'),
@@ -1749,9 +1791,13 @@
   function renderSetup() {
     listEl.appendChild(el('div', { class: 'listHead' }, [
       el('button', { type: 'button', class: 'link', text: '← Home', onclick: function () { showHome(); } }),
-      el('h2', { text: 'Rename and fields' })
+      el('h2', { text: 'Settings' })
     ]));
     var box = el('div', { class: 'list setup' });
+    box.appendChild(setupSection('staff', 'Staff', staffEditor()));
+    box.appendChild(setupSection('programs', 'Programs', programsEditor()));
+    box.appendChild(setupSection('custom', 'Your own fields', customEditor()));
+    box.appendChild(el('h3', { class: 'setupGroup', text: 'Names on the page' }));
     S.labelGroups().forEach(function (g) {
       var kids = [];
       g.items.forEach(function (item) {
@@ -1769,11 +1815,127 @@
       });
       box.appendChild(setupSection(g.key, g.text, kids));
     });
-    box.appendChild(setupSection('custom', 'Your own fields', customEditor()));
-    box.appendChild(setupSection('layout', 'Layout', [
-      el('button', { type: 'button', class: 'quietBtn', id: 'resetLayout', onclick: function () { setLayout(null, 'Layout back to the start.'); } }, ['Reset layout'])
-    ]));
+    box.appendChild(setupSection('layout', 'Layout', layoutEditor()));
     listEl.appendChild(box);
+  }
+
+  // Layout: which tiles show on this computer, and the order back to the start
+  function layoutEditor() {
+    var kids = S.TILES.map(function (t) {
+      var cb = el('input', { type: 'checkbox', id: 'showTile-' + t.key });
+      cb.checked = !state.layout.hidden[t.key];
+      cb.addEventListener('change', function () {
+        var h = Object.assign({}, state.layout.hidden);
+        if (cb.checked) delete h[t.key]; else h[t.key] = true;
+        state.focusNext = cb.id;
+        setLayout({ order: state.layout.order, collapsed: state.layout.collapsed, hidden: h }, tileName(t.key) + (cb.checked ? ' shown.' : ' hidden.'));
+      });
+      return el('label', { class: 'toggle' }, [cb, tileName(t.key)]);
+    });
+    kids.push(el('p', { class: 'quiet wide', text: 'These choices are kept on this computer, for you.' }));
+    kids.push(el('button', { type: 'button', class: 'quietBtn', id: 'resetLayout', onclick: function () { setLayout(null, 'Layout back to the start.'); } }, ['Reset layout']));
+    return kids;
+  }
+
+  // Staff: the People list. Each person's name, email, programs, and whether they can edit.
+  // Owner, Team and Assigned to pick from here; sign-in matches by email.
+  function refreshWho() {
+    if (state.signedInAs) state.who = A.whoIs(rawStore.items('people'), state.signedInAs, { byEmailOnly: auth.mode === 'microsoft' });
+  }
+  function staffEditor() {
+    var programs = settingList('programs');
+    var people = store.items('people').slice().sort(function (a, b) { return String(a.person).localeCompare(String(b.person)); });
+    var kids = people.map(function (p) {
+      var save = function (patch, note, focus) {
+        state.focusNext = focus;
+        store.update('people', p.id, patch).then(function (res) {
+          refreshWho(); render();
+          toast(note || 'Saved.', { list: 'people', before: res.before, focus: '#' + focus });
+        }).catch(showProblem);
+      };
+      var nameIn = el('input', { id: 'sf-name-' + p.id, autocomplete: 'off', value: p.person || '' });
+      nameIn.addEventListener('change', function () { var v = nameIn.value.trim(); if (v) save({ person: v }, 'Saved.', nameIn.id); else nameIn.value = p.person || ''; });
+      var mailIn = el('input', { id: 'sf-email-' + p.id, type: 'email', autocomplete: 'off', value: p.email || '' });
+      mailIn.addEventListener('change', function () { save({ email: mailIn.value.trim() }, 'Saved.', mailIn.id); });
+      var roleSel = el('select', { id: 'sf-role-' + p.id }, [el('option', { value: 'Editor', text: 'Can edit' }), el('option', { value: 'Viewer', text: 'Can view' })]);
+      roleSel.value = p.role === 'Editor' ? 'Editor' : 'Viewer';
+      roleSel.addEventListener('change', function () { save({ role: roleSel.value }, p.person + (roleSel.value === 'Editor' ? ' can edit.' : ' can view.'), roleSel.id); });
+      var mine = splitPeople(p.programs);
+      var allOn = !mine.length || mine.some(function (x) { return /^all$/i.test(x); });
+      var progBoxes = ['All programs'].concat(programs).map(function (prog, i) {
+        var cb = el('input', { type: 'checkbox', id: 'sf-prog-' + p.id + '-' + i });
+        cb.checked = i === 0 ? allOn : !allOn && mine.indexOf(prog) !== -1;
+        cb.addEventListener('change', function () {
+          var next;
+          if (i === 0) next = cb.checked ? 'All' : '';
+          else {
+            var cur = allOn ? [] : mine.slice();
+            cur = cur.filter(function (x) { return x !== prog; });
+            if (cb.checked) cur.push(prog);
+            next = cur.length ? cur.join('; ') : 'All';
+          }
+          save({ programs: next }, 'Programs saved.', cb.id);
+        });
+        return el('label', { class: 'toggle' }, [cb, prog]);
+      });
+      return el('div', { class: 'customField wide', 'data-staff': p.id }, [
+        el('div', { class: 'field' }, [el('label', { for: nameIn.id, text: 'Name' }), nameIn]),
+        el('div', { class: 'field' }, [el('label', { for: mailIn.id, text: 'Email' }), mailIn]),
+        el('div', { class: 'field' }, [el('label', { for: roleSel.id, text: 'On this page' }), roleSel]),
+        el('fieldset', { class: 'field wide progPicks' }, [el('legend', { text: 'Programs' })].concat(progBoxes)),
+        el('div', { class: 'customFoot wide' }, [el('button', { type: 'button', class: 'link', text: 'Take off Staff', 'aria-label': 'Take ' + p.person + ' off Staff', onclick: function () {
+          var keep = Object.assign({}, p); delete keep.id;
+          state.focusNext = 'newStaffName';
+          store.remove('people', p.id).then(function () { refreshWho(); render(); toast(p.person + ' is off Staff.', { list: 'people', readd: keep }); }).catch(showProblem);
+        } })])
+      ]);
+    });
+    var newName = el('input', { id: 'newStaffName', autocomplete: 'off' });
+    var newMail = el('input', { id: 'newStaffEmail', type: 'email', autocomplete: 'off' });
+    var form = el('form', { class: 'customAdd wide' }, [
+      el('div', { class: 'field' }, [el('label', { for: newName.id, text: 'New person' }), newName]),
+      el('div', { class: 'field' }, [el('label', { for: newMail.id, text: 'Email' }), newMail]),
+      el('button', { type: 'submit', class: 'primary', id: 'addStaff' }, ['Add to Staff'])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = newName.value.trim();
+      if (!name) { newName.focus(); return; }
+      store.add('people', { person: name, email: newMail.value.trim(), role: 'Viewer', programs: 'All' }).then(function (item) {
+        state.focusNext = 'sf-role-' + item.id;
+        render();
+        toast(name + ' added to Staff.', { list: 'people', id: item.id, added: true });
+      }).catch(showProblem);
+    });
+    kids.push(form);
+    return kids;
+  }
+
+  // Programs: the choices for a record's Program and a person's programs
+  function programsEditor() {
+    var programs = settingList('programs');
+    var kids = programs.map(function (prog, i) {
+      return el('div', { class: 'pair wide progRow' }, [el('span', { text: prog }),
+        el('button', { type: 'button', class: 'link', text: 'Take off the list', 'aria-label': 'Take ' + prog + ' off the list', onclick: function () {
+          state.focusNext = 'newProgram';
+          setSetting('programs', programs.filter(function (x, j) { return j !== i; }).join('; '), prog + ' is off the list. Records keep it.');
+        } })]);
+    });
+    var input = el('input', { id: 'newProgram', autocomplete: 'off' });
+    var form = el('form', { class: 'customAdd wide' }, [
+      el('div', { class: 'field' }, [el('label', { for: input.id, text: 'New program' }), input]),
+      el('button', { type: 'submit', class: 'primary', id: 'addProgram' }, ['Add program'])
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = input.value.replace(/;/g, ' ').trim();
+      if (!v) { input.focus(); return; }
+      if (programs.indexOf(v) !== -1) { input.value = ''; input.focus(); return; }
+      state.focusNext = 'newProgram';
+      setSetting('programs', programs.concat([v]).join('; '), v + ' added.');
+    });
+    kids.push(form);
+    return kids;
   }
 
   // Your own fields: each shows on every record, in the part you pick; choice, date and
@@ -1866,6 +2028,7 @@
   function signedIn(person) {
     if (!person) { showSignIn(); return; }
     var before = state.who && state.who.person;
+    state.signedInAs = person;
     state.who = A.whoIs(rawStore.items('people'), person, { byEmailOnly: auth.mode === 'microsoft' });
     if (before && before !== state.who.person) { // a different person starts on a fresh home page
       state.view = 'home'; state.list = null; state.query = ''; $('search').value = ''; state.expanded = {}; state.archiveQuery = '';

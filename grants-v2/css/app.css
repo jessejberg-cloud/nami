@@ -325,3 +325,15 @@ dialog::backdrop { background: rgba(12, 73, 156, .22); }
 @media (max-width: 700px) { .brandBand h1 { margin-left: 0; flex-basis: 100%; order: 3; } }
 .closeButtons { display: inline-flex; gap: 16px; align-items: center; flex: none; }
 .dialogHome { font-weight: 700; }
+
+/* ---------- Settings behind the gear; Team; Staff ---------- */
+.gearBtn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 50%; background: none; color: var(--quiet); cursor: pointer; }
+.gearBtn .icon { width: 22px; height: 22px; }
+.gearBtn:hover, .gearBtn:focus-visible { color: var(--nami-blue); border-color: var(--line); background: #fff; }
+.gearBtn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.brandBand .who { margin-left: auto; }
+fieldset.field { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+fieldset.field legend { padding: 0; margin-bottom: 4px; font-size: .9rem; color: var(--quiet); width: 100%; }
+.setupGroup { margin: 18px 0 6px; font-size: 1.05rem; }
+.setup > details + details { margin-top: 8px; }
+.progRow { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding: 4px 0; }

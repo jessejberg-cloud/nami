@@ -163,7 +163,7 @@ test('in the browser: renames show everywhere, a new field appears and filters, 
   await openSetup('custom');
   await page.fill('#newFieldName', 'Site visit');
   await page.selectOption('#newFieldType', 'date');
-  await page.click('.customAdd button[type=submit]');
+  await page.click('[data-setup=custom] .customAdd button[type=submit]');
   await page.waitForSelector('[data-custom=siteVisit]');
   await home();
   await page.evaluate(() => window.NAMI.app.openDetail(window.NAMI.app.store.items('records').find((r) => r.name === 'Peer Workforce Subaward').id));

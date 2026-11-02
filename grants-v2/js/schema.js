@@ -36,6 +36,7 @@
         { key: 'grantType', sp: 'GrantType', label: 'Grant type', type: 'choice', choices: ['Federal', 'State', 'County', 'Foundation', 'Corporate', 'Other'] },
         { key: 'program', sp: 'Program', label: 'Program', type: 'choice', choicesFrom: 'programs' },
         { key: 'owner', sp: 'Owner', label: 'Owner', type: 'person', fallback: '@me' },
+        { key: 'team', sp: 'Team', label: 'Team', type: 'people' },
         { key: 'status', sp: 'Status', label: 'Status', type: 'choice', choices: STATUS, fallback: 'Potentials' },
         { key: 'previousStatus', sp: 'PreviousStatus', label: 'Status before archiving', type: 'choice', choices: STATUS, hidden: true },
         { key: 'archiveReason', sp: 'ArchiveReason', label: 'Archive reason', type: 'choice', choices: ['Closed', 'Declined', 'Not pursued'] },

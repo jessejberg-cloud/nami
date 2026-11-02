@@ -40,8 +40,13 @@
     return false;
   }
 
+  function onTeam(person, r) {
+    return !!person && (r.owner === person || String(r.team || '').split(';').map(function (s) { return s.trim(); }).indexOf(person) !== -1);
+  }
+
   function inPrograms(who, r) {
     if (!who || who.all || !r.program) return true;
+    if (onTeam(who.person, r)) return true;
     return who.programs.indexOf(r.program) !== -1;
   }
 
@@ -88,7 +93,7 @@
     };
   }
 
-  var api = { whoIs: whoIs, can: can, inPrograms: inPrograms, guard: guard, stepState: stepState };
+  var api = { whoIs: whoIs, can: can, inPrograms: inPrograms, onTeam: onTeam, guard: guard, stepState: stepState };
   root.NAMI = root.NAMI || {};
   root.NAMI.access = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
