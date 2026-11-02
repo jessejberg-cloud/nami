@@ -35,12 +35,34 @@
     : N.data.createSampleStore({ storage: window.localStorage });
   // Every change passes the signed-in person's role; a viewer can only log progress on their tasks
   var store = A.guard(rawStore, function () { return state.who; });
+
+  // Columns that came after the first lists were made: a list made before them gets each
+  // one the first time a change needs it (SharePoint only; the sample has every column)
+  var LATER_COLUMNS = { records: { team: 'note', extraFields: 'note', checkInPlan: 'note' }, tasks: { checkIn: 'date' } };
+  var columnReady = {};
+  function columnsReady(list, keys) {
+    if (!rawStore.ensureColumn || !LATER_COLUMNS[list]) return Promise.resolve();
+    return Promise.all(keys.filter(function (k) { return LATER_COLUMNS[list][k]; }).map(function (k) {
+      var id = list + '.' + k;
+      if (!columnReady[id]) {
+        var col = schema.column(list, k);
+        columnReady[id] = rawStore.ensureColumn(list, { key: col.sp, label: col.label, type: LATER_COLUMNS[list][k] });
+        columnReady[id].catch(function () { delete columnReady[id]; });
+      }
+      return columnReady[id];
+    }));
+  }
+  (function () {
+    var update = store.update, add = store.add;
+    store.update = function (list, id, changes) { var s = this; return columnsReady(list, Object.keys(changes || {})).then(function () { return update.call(s, list, id, changes); }); };
+    store.add = function (list, fields, ctx) { var s = this; return columnsReady(list, Object.keys(fields || {})).then(function () { return add.call(s, list, fields, ctx); }); };
+  })();
   var auth = N.auth.createAuth(window.NAMI_CONFIG, { storage: window.localStorage, people: function () { return rawStore.items('people'); } });
   function me() { return state.who ? state.who.person : ''; }
   function isEditor() { return A.can(state.who, 'edit'); }
 
   var ORDER = ['Potentials', 'Upcoming', 'Applied', 'Active', 'Awarded'];
-  var state = { view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, openTaskId: null, openWatchId: null, undo: null, toastAction: null, who: null, myPrograms: false };
+  var state = { searchNow: {}, view: 'home', list: null, query: '', archiveQuery: '', myTodo: false, awardView: '', expanded: {}, openId: null, openTaskId: null, openWatchId: null, undo: null, toastAction: null, who: null, myPrograms: false };
   // Choices a person makes on the page (Award year or Spread, My to-do) are kept per browser
   var CHOICE_KEY = 'nami-grants-v2-choices';
   try { var kept = JSON.parse(window.localStorage.getItem(CHOICE_KEY)) || {}; state.myTodo = !!kept.myTodo; state.awardView = kept.awardView || ''; } catch (e) { /* fine without */ }
@@ -86,6 +108,27 @@
     return row ? row.value : '';
   }
   function settingList(key) { return setting(key).split(';').map(function (s) { return s.trim(); }).filter(Boolean); }
+
+  // Things the page does by itself, each with its own switch in Settings, Automatic
+  var AUTOMATIC = [
+    { key: 'feeds', text: 'Funding Watch looks for new grants when the page opens', on: true },
+    { key: 'reviews', text: 'Watch reviews come up on To-do when their month arrives', on: true },
+    { key: 'checkins', text: 'Check-ins come up on To-do as their date nears', on: true },
+    { key: 'reminders', text: 'Reminder email dates come up on To-do', on: true },
+    { key: 'refresh', text: 'Fresh data when you come back to the page', on: true },
+    { key: 'emails', text: 'Reminder emails before a due date', on: false, later: 'Comes with the move to SharePoint' }
+  ];
+  function autoMap() {
+    var m = {};
+    settingList('automatic').forEach(function (p) { var kv = p.split('='); if (kv.length === 2) m[kv[0].trim()] = /^on$/i.test(kv[1].trim()); });
+    return m;
+  }
+  function auto(key) {
+    var a = AUTOMATIC.filter(function (x) { return x.key === key; })[0];
+    if (!a || a.later) return false;
+    var m = autoMap();
+    return key in m ? m[key] : a.on;
+  }
 
   // Amounts show with commas in a field ("45,000") and are stored as plain numbers.
   function shownValue(v) {
@@ -585,7 +628,29 @@
     });
     // Review: a watched cycle's month, or a record's watch date, has arrived. Watch-list rows
     // belong to nobody, so My to-do shows only the person's own records here.
-    W.reviewItems(mineOnly ? [] : store.items('watch'), recs.filter(function (r) { return !mineOnly || A.onTeam(me(), r); }), today).forEach(function (it) {
+    if (auto('checkins')) store.items('tasks').forEach(function (task) {
+      if (task.done || !task.checkIn || task.checkIn > soon) return;
+      var rec = task.record ? store.get('records', task.record) : null;
+      if (rec && !ids[rec.id]) return;
+      if (mineOnly && task.assignedTo !== me() && !(rec && rec.owner === me())) return;
+      items.push({ kind: 'checkin', date: task.checkIn, title: 'Check in' + (task.assignedTo ? ' with ' + task.assignedTo : '') + ': ' + (task.title || 'To-do'), task: task, record: rec,
+        note: task.checkIn <= t ? 'Check in now' : 'Check in soon' });
+    });
+    recs.forEach(function (r) {
+      var plan = parsePlan(r.checkInPlan);
+      if (!plan.dates.length && !plan.reminders.length) return;
+      if (mineOnly && r.owner !== me() && plan.people.indexOf(me()) === -1) return;
+      var title = plan.title || 'Check-in: ' + r.name;
+      if (auto('checkins')) plan.dates.forEach(function (d) {
+        if (plan.done.indexOf(d) !== -1 || d > soon) return;
+        items.push({ kind: 'plan', date: d, title: title, record: r, planDate: d, people: plan.people, note: d <= t ? 'Check in now' : 'Check in soon' });
+      });
+      if (auto('reminders')) plan.reminders.forEach(function (d) {
+        if (plan.done.indexOf('r' + d) !== -1 || d > soon) return;
+        items.push({ kind: 'planReminder', date: d, title: 'Send a reminder: ' + r.name, record: r, planDate: 'r' + d, people: plan.people, note: d <= t ? 'Send now' : 'Send soon' });
+      });
+    });
+    if (auto('reviews')) W.reviewItems(mineOnly ? [] : store.items('watch'), recs.filter(function (r) { return !mineOnly || A.onTeam(me(), r); }), today).forEach(function (it) {
       if (it.watch && it.watch.record) it.record = store.get('records', it.watch.record);
       items.push(it);
     });
@@ -611,9 +676,12 @@
       else if (it.record.watchNote) meta.push(it.record.watchNote);
       meta = meta.filter(Boolean);
     }
+    if (it.kind === 'checkin' && it.record) meta.push(it.record.name);
+    if ((it.kind === 'plan' || it.kind === 'planReminder') && it.people.length) meta.push(it.people.join(', '));
     var open = function () {
-      if (it.kind === 'task') openTask(it.task.id);
+      if (it.kind === 'task' || it.kind === 'checkin') openTask(it.task.id, it.kind === 'checkin' ? '#emailReminder' : null);
       else if (it.kind === 'review' && it.watch) openWatch(it.watch.id);
+      else if (it.kind === 'plan' || it.kind === 'planReminder') { openSections.checkins = true; openDetail(it.record.id); var f = dialog.querySelector(it.kind === 'plan' ? '#planInvites' : '#planEmail'); if (f) f.focus(); }
       else if (it.record) openDetail(it.record.id);
     };
     var reviewOfWatch = it.kind === 'review' && it.watch;
@@ -623,6 +691,15 @@
       it.note ? tagEl({ text: it.note, tone: 'attention' }) : null
     ]);
     var kids = [];
+    if ((it.kind === 'plan' || it.kind === 'planReminder') && isEditor()) {
+      kids.push(el('button', { type: 'button', class: 'check', 'aria-label': 'Mark done: ' + it.title, title: 'Mark done', onclick: function () {
+        var plan = parsePlan(store.get('records', it.record.id).checkInPlan);
+        plan.done.push(it.planDate);
+        store.update('records', it.record.id, { checkInPlan: JSON.stringify(plan) }).then(function (res) {
+          render(); toast('Done: ' + it.title + '.', { list: 'records', before: res.before });
+        }).catch(function (e) { toast(e.message); });
+      } }, [icon('check')]));
+    }
     if (it.kind === 'task' && isEditor()) {
       kids.push(el('button', { type: 'button', class: 'check', 'aria-label': 'Mark done: ' + it.title, title: 'Mark done', onclick: function () { markDone(it.task); } }, [icon('check')]));
     }
@@ -876,6 +953,9 @@
   }
 
   function feedBody(f, recs) {
+    if (!auto('feeds') && !feedCache[f.id] && !state.searchNow[f.id]) {
+      return el('p', {}, [el('button', { type: 'button', class: 'link', 'data-search-now': f.id, text: 'Search now', onclick: function () { state.searchNow[f.id] = true; refreshFeeds(); } })]);
+    }
     var c = feedState(f);
     if (c.state === 'loading') return el('p', { class: 'quiet', text: 'Loading' });
     if (c.state === 'error') return el('p', { class: 'quiet notLoading' }, [icon('plain'), 'Not loading right now']);
@@ -1111,6 +1191,7 @@
     $('reset').hidden = !editor || onSharePoint;
     $('allLists').hidden = onSharePoint; // that page shows the sample
     renderWho();
+    renderNotes();
     $('homeLink').textContent = document.title = T('page.title', 'Grants Dashboard');
     if (state.query) {
       state.view = 'list';
@@ -1403,9 +1484,11 @@
       section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)].concat(ownFields(r, 'notes', custom, extras), [addFieldButton(r, 'notes')]),
         !!(r.comments || r.links || r.folderLink) || hasOwn(r, 'notes', custom, extras)),
       tasks.length || editor ? section('tasks', [taskList(tasks), editor ? addTaskForm(r) : null], true) : null,
+      planSection(r),
       years.length ? section('awardYears', [yearList(years)], true) : null,
       section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(ownFields(r, 'more', custom, extras), [addFieldButton(r, 'more')]),
         !!(r.watchDate || r.watchNote) || hasOwn(r, 'more', custom, extras)),
+      editor ? meetingBox(r, null) : null,
       editor ? el('div', { class: 'detailActions' }, [
         r.watchDate ? null : el('button', { type: 'button', class: 'quietBtn', id: 'addToWatch', onclick: function () {
           openSections.more = true; openDetail(r.id, 'watchDate');
@@ -1459,7 +1542,8 @@
       stepsBlock(t),
       commentsBlock(t),
       editor ? section('taskDetails', [field(t, 'title', { list: 'tasks', wide: true }), field(t, 'type', { list: 'tasks' }), field(t, 'dueDate', { list: 'tasks' }),
-        field(t, 'assignedTo', { list: 'tasks' }), field(t, 'steps', { list: 'tasks', wide: true })], !!focusSel) : null,
+        field(t, 'assignedTo', { list: 'tasks' }), field(t, 'checkIn', { list: 'tasks' }), field(t, 'steps', { list: 'tasks', wide: true })], !!focusSel) : null,
+      editor ? remindBlock(t, rec) : null,
       editor ? el('div', { class: 'detailActions' }, [
         el('button', { type: 'button', id: 'taskDone', class: t.done ? 'quietBtn' : 'primary', onclick: function () { setTaskDone(t, !t.done); } }, [t.done ? 'Not done yet' : 'Mark done'])
       ]) : null
@@ -1471,7 +1555,372 @@
   function refreshTask(t, key) {
     var h = dialog.querySelector('#detailName'); if (h) h.textContent = t.title || 'To-do';
     var st = dialog.querySelector('#taskStatus'); if (st) { st.innerHTML = ''; taskStatus(t).forEach(function (n) { st.appendChild(n); }); }
+    if (key === 'checkIn' || key === 'assignedTo' || key === 'dueDate' || key === 'title') { var oldR = dialog.querySelector('#remindBlock');
+      if (oldR) { // keep an email or meeting being written
+        var freshR = remindBlock(t, t.record ? store.get('records', t.record) : null);
+        ['.mailBox', '.meetingBox'].forEach(function (sel) { var o = oldR.querySelector(sel), n = freshR.querySelector(sel); if (o && n && o.firstChild && (o.querySelector('form, .composer'))) n.replaceWith(o); });
+        oldR.replaceWith(freshR);
+      }
+    }
     if (key === 'steps' || key === 'assignedTo') { var old = dialog.querySelector('#taskSteps'); var fresh = stepsBlock(t); if (old && fresh) old.replaceWith(fresh); else if (old) old.remove(); else if (fresh) dialog.querySelector('.taskRecord, .problem').after(fresh); }
+  }
+
+  // Reminders a person sends: an email ready in Outlook to the person assigned, and a
+  // calendar invite for the check-in. Nothing goes out until someone presses Send.
+  function staffEmail(name) { var p = store.items('people').filter(function (x) { return x.person === name; })[0]; return p && p.email ? p.email : ''; }
+  function remindBlock(t, rec) {
+    var to = staffEmail(t.assignedTo);
+    var mailBox = el('div', { class: 'mailBox' });
+    var kids = [el('h3', { text: 'Reminders' }),
+      el('div', { class: 'detailActions' }, [
+        el('button', { type: 'button', class: 'quietBtn', id: 'emailReminder', onclick: function () {
+          composeEmail(mailBox, { people: t.assignedTo ? [t.assignedTo] : [], rec: rec, task: t, date: t.checkIn || '', template: 'todo' });
+        } }, ['Email reminder' + (t.assignedTo ? ' to ' + t.assignedTo : '')]),
+        t.checkIn ? el('button', { type: 'button', class: 'quietBtn', id: 'calendarCheckIn', onclick: function () { saveInvite(t, rec); } }, ['Add check-in to calendar']) : null
+      ]), mailBox];
+    if (t.assignedTo && !to) kids.push(el('p', { class: 'quiet', text: 'No email for ' + t.assignedTo + ' yet. Add one in Settings, Staff.' }));
+    if (!t.checkIn) kids.push(el('p', { class: 'quiet', text: 'Set a check-in date above to add it to your calendar.' }));
+    kids.push(meetingBox(rec, t));
+    return el('section', { class: 'taskPart', id: 'remindBlock' }, kids);
+  }
+  // ---------- Check-ins on a record: who, what the meeting is called, the dates, and reminder email dates ----------
+
+  function parsePlan(s) {
+    var p = {}; try { p = JSON.parse(s || '{}') || {}; } catch (e) { p = {}; }
+    var dates = function (a) { return (Array.isArray(a) ? a : []).filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); }).filter(function (d, i, all) { return all.indexOf(d) === i; }).sort(); };
+    return { title: typeof p.title === 'string' ? p.title : '', people: Array.isArray(p.people) ? p.people.filter(Boolean) : [],
+      dates: dates(p.dates), reminders: dates(p.reminders), done: Array.isArray(p.done) ? p.done : [],
+      time: /^\d{2}:\d{2}$/.test(p.time || '') ? p.time : '10:00', minutes: [30, 60, 90].indexOf(p.minutes) !== -1 ? p.minutes : 30 };
+  }
+  function addMonths(iso, n) {
+    var d = new Date(iso + 'T12:00:00'), day = d.getDate();
+    d.setDate(1); d.setMonth(d.getMonth() + n);
+    var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, last));
+    return derive.iso(d);
+  }
+
+  function planSection(r) {
+    var plan = parsePlan(r.checkInPlan);
+    var has = plan.dates.length || plan.reminders.length || plan.people.length;
+    if (!isEditor()) {
+      if (!has) return null;
+      return section('checkins', [el('div', { class: 'wide', id: 'planBlock' }, [
+        el('p', { text: (plan.title || 'Check-in: ' + r.name) + (plan.people.length ? ', with ' + plan.people.join(', ') : '') }),
+        plan.dates.length ? el('p', { class: 'quiet', text: 'Check-ins: ' + plan.dates.map(niceDate).join(', ') }) : null,
+        plan.reminders.length ? el('p', { class: 'quiet', text: 'Reminder emails: ' + plan.reminders.map(niceDate).join(', ') }) : null])], false);
+    }
+    return section('checkins', [planBlock(r)], !!has);
+  }
+
+  function planBlock(r) {
+    var plan = parsePlan(r.checkInPlan);
+    var base = r.startDate || derive.iso(new Date());
+    function savePlan(next, note, focusSel) {
+      store.update('records', r.id, { checkInPlan: JSON.stringify(next) }).then(function (res) {
+        render();
+        var old = dialog.querySelector('#planBlock');
+        if (old && state.openId === r.id) { var fresh = planBlock(store.get('records', r.id)); old.replaceWith(fresh); var f = focusSel && fresh.querySelector(focusSel); if (f) f.focus(); }
+        toast(note, { list: 'records', before: res.before, focus: focusSel });
+      }).catch(showProblem);
+    }
+    function change(patch, note, focusSel) { savePlan(Object.assign(parsePlan(store.get('records', r.id).checkInPlan), patch), note, focusSel); }
+    function addDates(key, list, focusSel) {
+      var cur = parsePlan(store.get('records', r.id).checkInPlan);
+      var fresh = list.filter(function (d) { return cur[key].indexOf(d) === -1; });
+      if (!fresh.length) { toast('Those dates are already on the list.'); return; }
+      var p = {}; p[key] = cur[key].concat(fresh);
+      change(p, fresh.length === 1 ? niceDate(fresh[0]) + ' added.' : fresh.length + ' dates added.', focusSel);
+    }
+    function dateList(key, label) {
+      var cur = plan[key];
+      if (!cur.length) return el('p', { class: 'quiet', text: '·' });
+      var ul = el('ul', { class: 'plainList dateList', 'aria-label': label });
+      cur.forEach(function (d) {
+        var done = plan.done.indexOf(key === 'dates' ? d : 'r' + d) !== -1;
+        ul.appendChild(el('li', {}, [el('span', { text: (done ? '✓ ' : '') + niceDate(d) }),
+          el('button', { type: 'button', class: 'link takeOff', 'aria-label': 'Take ' + niceDate(d) + ' off', title: 'Take off', text: '×', onclick: function () {
+            var p = {}; p[key] = parsePlan(store.get('records', r.id).checkInPlan)[key].filter(function (x) { return x !== d; });
+            change(p, niceDate(d) + ' taken off.', '#plan-' + key + '-add');
+          } })]));
+      });
+      return ul;
+    }
+
+    // Who
+    var names = staffNames(); plan.people.forEach(function (p) { if (names.indexOf(p) === -1) names.push(p); });
+    var who = el('fieldset', { class: 'field wide' }, [el('legend', { text: 'Responsible' })].concat(names.map(function (p, i) {
+      var cb = el('input', { type: 'checkbox', id: 'plan-who-' + i });
+      cb.checked = plan.people.indexOf(p) !== -1;
+      cb.addEventListener('change', function () {
+        var now = parsePlan(store.get('records', r.id).checkInPlan).people.filter(function (x) { return x !== p; });
+        if (cb.checked) now.push(p);
+        change({ people: now }, cb.checked ? p + ' added.' : p + ' taken off.', '#plan-who-' + i);
+      });
+      return el('label', { class: 'toggle' }, [cb, p]);
+    })).concat(names.length ? [] : [el('span', { class: 'quiet', text: 'Add staff in Settings' })]));
+
+    var title = el('input', { id: 'planTitle', autocomplete: 'off', value: plan.title, placeholder: 'Check-in: ' + r.name });
+    title.addEventListener('change', function () { change({ title: title.value.trim() }, 'Saved.', '#planTitle'); });
+    var time = el('input', { id: 'planTime', type: 'time', value: plan.time });
+    time.addEventListener('change', function () { if (time.value) change({ time: time.value }, 'Saved.', '#planTime'); });
+    var len = el('select', { id: 'planLength' }, [['30', '30 minutes'], ['60', '1 hour'], ['90', '1 and a half hours']].map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+    len.value = String(plan.minutes);
+    len.addEventListener('change', function () { change({ minutes: Number(len.value) }, 'Saved.', '#planLength'); });
+
+    // Check-in dates: from the start date, repeating, or any date
+    var quick = [3, 6, 10].map(function (n) {
+      return el('button', { type: 'button', class: 'quietBtn small', id: 'planAdd' + n, onclick: function () { addDates('dates', [addMonths(base, n)], '#planAdd' + n); } }, [n + ' months']);
+    });
+    var every = el('select', { id: 'planEvery' }, [['1', 'Every month'], ['3', 'Every 3 months'], ['6', 'Every 6 months']].map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+    every.value = '3';
+    var until = r.endDate || addMonths(base, 12);
+    var repeatBtn = el('button', { type: 'button', class: 'quietBtn small', id: 'planRepeat', onclick: function () {
+      var step = Number(every.value), out = [];
+      for (var n = step; out.length < 36; n += step) { var d = addMonths(base, n); if (d > until) break; out.push(d); }
+      if (!out.length) { toast('No dates fit before ' + niceDate(until) + '.'); return; }
+      addDates('dates', out, '#planRepeat');
+    } }, ['Add until ' + niceDate(until)]);
+    var pick = el('input', { id: 'plan-dates-add', type: 'date' });
+    var pickBtn = el('button', { type: 'button', class: 'quietBtn small', id: 'planAddDate', onclick: function () { if (pick.value) addDates('dates', [pick.value], '#plan-dates-add'); else pick.focus(); } }, ['Add date']);
+
+    // Reminder email dates
+    var rpick = el('input', { id: 'plan-reminders-add', type: 'date' });
+    var rBtn = el('button', { type: 'button', class: 'quietBtn small', id: 'planAddReminder', onclick: function () { if (rpick.value) addDates('reminders', [rpick.value], '#plan-reminders-add'); else rpick.focus(); } }, ['Add date']);
+    var weekBtn = el('button', { type: 'button', class: 'quietBtn small', id: 'planRemindWeek', onclick: function () {
+      var cur = parsePlan(store.get('records', r.id).checkInPlan);
+      if (!cur.dates.length) { toast('Add check-in dates first.'); return; }
+      addDates('reminders', cur.dates.map(function (d) { return derive.iso(derive.addDays(new Date(d + 'T12:00:00'), -7)); }), '#planRemindWeek');
+    } }, ['A week before each check-in']);
+
+    var mailBox = el('div', { class: 'mailBox wide' });
+    var meetTitle = function () { return plan.title || 'Check-in: ' + r.name; };
+    return el('div', { class: 'planBlock wide', id: 'planBlock' }, [
+      el('div', { class: 'fields' }, [who,
+        el('div', { class: 'field wide' }, [el('label', { for: 'planTitle', text: 'Meeting title' }), title]),
+        el('div', { class: 'field' }, [el('label', { for: 'planTime', text: 'Start' }), time]),
+        el('div', { class: 'field' }, [el('label', { for: 'planLength', text: 'Length' }), len])]),
+      el('h3', { text: 'Check-in dates' }),
+      dateList('dates', 'Check-in dates'),
+      el('p', { class: 'quiet', text: 'From ' + (r.startDate ? 'the start date, ' + niceDate(base) : 'today') + ':' }),
+      el('div', { class: 'planRow' }, quick),
+      el('div', { class: 'planRow' }, [el('label', { for: 'planEvery', class: 'sr', text: 'How often' }), every, repeatBtn]),
+      el('div', { class: 'planRow' }, [el('label', { for: 'plan-dates-add', class: 'sr', text: 'A check-in date' }), pick, pickBtn]),
+      el('h3', { text: 'Reminder email dates' }),
+      dateList('reminders', 'Reminder email dates'),
+      el('div', { class: 'planRow' }, [weekBtn]),
+      el('div', { class: 'planRow' }, [el('label', { for: 'plan-reminders-add', class: 'sr', text: 'A reminder email date' }), rpick, rBtn]),
+      el('div', { class: 'detailActions' }, [
+        el('button', { type: 'button', class: 'primary', id: 'planInvites', onclick: function () {
+          var cur = parsePlan(store.get('records', r.id).checkInPlan);
+          var upcoming = cur.dates.filter(function (d) { return cur.done.indexOf(d) === -1; });
+          if (!upcoming.length) { toast('Add check-in dates first.'); return; }
+          icsDownload(upcoming.map(function (d) {
+            var start = new Date(d + 'T' + cur.time + ':00');
+            return { uid: 'plan-' + r.id + '-' + d, start: start, end: new Date(start.getTime() + cur.minutes * 60000), summary: cur.title || 'Check-in: ' + r.name,
+              description: r.name + '. A check-in: where things are, the data being tracked, and any support needed.', people: cur.people };
+          }), 'check-ins.ics', upcoming.length + (upcoming.length === 1 ? ' invite' : ' invites') + ' saved. Open the file in Outlook to send.');
+        } }, ['Make calendar invites']),
+        el('button', { type: 'button', class: 'quietBtn', id: 'planEmail', onclick: function () {
+          var cur = parsePlan(store.get('records', r.id).checkInPlan);
+          var next = cur.dates.filter(function (d) { return d >= derive.iso(new Date()) && cur.done.indexOf(d) === -1; })[0] || '';
+          composeEmail(mailBox, { people: cur.people.length ? cur.people : [r.owner].filter(Boolean), rec: r, date: next, template: 'checkin', subject: meetTitle() });
+        } }, ['Email reminder'])
+      ]),
+      mailBox
+    ]);
+  }
+
+  // ---------- Emails: pick a template, change the words, open it in Outlook ----------
+
+  var BUILT_IN_TEMPLATES = [
+    { key: 'checkin', name: 'Check-in reminder', subject: '{meeting}', body: 'Hi {name},\n\nA friendly reminder that we are checking in on {grant} on {check-in date}. We will look at where things are, the data you are tracking, and any support you need.\n\nYour open to-dos on this grant:\n{to-dos}\n\nThank you,\n{me}' },
+    { key: 'todo', name: 'To-do reminder', subject: 'Reminder: {to-do}', body: 'Hi {name},\n\nA friendly reminder about "{to-do}" for {grant}{due}.\n\nYour open to-dos on this grant:\n{to-dos}\n\nThank you,\n{me}' }
+  ];
+  function savedTemplates() {
+    try { var v = JSON.parse(setting('emailTemplates') || '[]'); return Array.isArray(v) ? v.filter(function (t) { return t && t.name; }) : []; } catch (e) { return []; }
+  }
+  function allTemplates() { return savedTemplates().map(function (t, i) { return Object.assign({ key: 'saved-' + i }, t); }).concat(BUILT_IN_TEMPLATES); }
+  function fillTemplate(text, o) {
+    var firsts = o.people.map(function (p) { return String(p).split(' ')[0]; });
+    var names = firsts.length > 1 ? firsts.slice(0, -1).join(', ') + ' and ' + firsts[firsts.length - 1] : firsts[0] || 'there';
+    var open = store.items('tasks').filter(function (t) { return o.rec && t.record === o.rec.id && !t.done && (!o.people.length || o.people.indexOf(t.assignedTo) !== -1); });
+    var todos = open.length ? open.map(function (t) { return '- ' + (t.title || 'To-do') + (t.dueDate ? ', due ' + niceDate(t.dueDate) : '') + (o.people.length > 1 && t.assignedTo ? ' (' + t.assignedTo + ')' : ''); }).join('\n') : '- (none open)';
+    var map = { name: names, grant: o.rec ? o.rec.name : 'this grant', 'check-in date': o.date ? niceDate(o.date) : 'our next check-in', 'to-dos': todos,
+      'to-do': o.task ? o.task.title || 'to-do' : '', due: o.task && o.task.dueDate ? ', due ' + niceDate(o.task.dueDate) : '', me: me(), meeting: o.subject || (o.rec ? 'Check-in: ' + o.rec.name : 'Check-in') };
+    return String(text || '').replace(/\{([a-z -]+)\}/g, function (m, k) { return k in map ? map[k] : m; });
+  }
+  function composeEmail(box, o) {
+    box.innerHTML = '';
+    var templates = allTemplates();
+    var sel = el('select', { id: 'mailTemplate' }, templates.map(function (t) { return el('option', { value: t.key, text: t.name }); }));
+    var first = templates.filter(function (t) { return t.key === o.template; })[0] ? o.template : templates[0].key;
+    sel.value = first;
+    var subject = el('input', { id: 'mailSubject', autocomplete: 'off' });
+    var body = el('textarea', { id: 'mailBody', rows: 9 });
+    var to = o.people.map(staffEmail).filter(Boolean);
+    var missing = o.people.filter(function (p) { return !staffEmail(p); });
+    var openLink = el('a', { class: 'primary btnLink btnPrimary', id: 'mailOpen' }, ['Open in Outlook']);
+    function link() { openLink.href = 'mailto:' + to.join(',') + '?subject=' + encodeURIComponent(subject.value) + '&body=' + encodeURIComponent(body.value); }
+    function use(key) { var t = templates.filter(function (x) { return x.key === key; })[0]; subject.value = fillTemplate(t.subject, o); body.value = fillTemplate(t.body, o); link(); }
+    sel.addEventListener('change', function () { use(sel.value); });
+    subject.addEventListener('input', link); body.addEventListener('input', link);
+    var saveName = el('input', { id: 'mailSaveName', autocomplete: 'off', placeholder: 'Template name' });
+    var saveRow = el('div', { class: 'planRow', hidden: true }, [el('label', { for: 'mailSaveName', class: 'sr', text: 'Template name' }), saveName,
+      el('button', { type: 'button', class: 'quietBtn small', id: 'mailSaveTemplate', onclick: function () {
+        var n = saveName.value.trim(); if (!n) { saveName.focus(); return; }
+        var t = templates.filter(function (x) { return x.key === sel.value; })[0];
+        // Saved with the fill-ins kept, so the template works for anyone; the words typed here are what is saved
+        var keep = savedTemplates().filter(function (x) { return x.name !== n; }).concat([{ name: n, subject: unfill(subject.value, t.subject, o), body: unfill(body.value, t.body, o) }]);
+        setSetting('emailTemplates', JSON.stringify(keep), 'Template "' + n + '" saved.').then(function () { saveRow.hidden = true; });
+      } }, ['Save'])]);
+    box.appendChild(el('div', { class: 'composer' }, [
+      el('div', { class: 'field' }, [el('label', { for: 'mailTemplate', text: 'Template' }), sel]),
+      el('p', { class: 'quiet', text: 'To: ' + (o.people.length ? o.people.join(', ') : 'nobody picked yet') + (missing.length ? '. No email yet for ' + missing.join(', ') + '; add it in Settings, Staff.' : '') }),
+      el('div', { class: 'field' }, [el('label', { for: 'mailSubject', text: 'Subject' }), subject]),
+      el('div', { class: 'field' }, [el('label', { for: 'mailBody', text: 'Email' }), body]),
+      el('div', { class: 'detailActions' }, [openLink,
+        el('button', { type: 'button', class: 'link', id: 'mailSaveAs', text: 'Save as a template', onclick: function () { saveRow.hidden = false; saveName.focus(); } }),
+        el('button', { type: 'button', class: 'link', text: 'Close', onclick: function () { box.innerHTML = ''; } })]),
+      saveRow
+    ]));
+    use(first);
+    sel.focus();
+  }
+  // Puts the fill-ins back where the words still match what they filled in
+  function unfill(text, template, o) {
+    var out = text;
+    ['to-dos', 'grant', 'check-in date', 'name', 'me', 'meeting', 'to-do'].forEach(function (k) {
+      if (String(template || '').indexOf('{' + k + '}') === -1) return;
+      var v = fillTemplate('{' + k + '}', o);
+      if (v && v.length > 2) out = out.split(v).join('{' + k + '}');
+    });
+    return out;
+  }
+
+  // Settings, Email templates
+  function templatesEditor() {
+    var list = savedTemplates();
+    var kids = list.map(function (t, i) {
+      var name = el('input', { id: 'tpl-name-' + i, autocomplete: 'off', value: t.name });
+      var subj = el('input', { id: 'tpl-subject-' + i, autocomplete: 'off', value: t.subject || '' });
+      var body = el('textarea', { id: 'tpl-body-' + i, rows: 6 }); body.value = t.body || '';
+      var save = function (focus) {
+        var next = savedTemplates(); next[i] = { name: name.value.trim() || t.name, subject: subj.value, body: body.value };
+        state.focusNext = focus; setSetting('emailTemplates', JSON.stringify(next), 'Template saved.');
+      };
+      name.addEventListener('change', function () { save(name.id); });
+      subj.addEventListener('change', function () { save(subj.id); });
+      body.addEventListener('change', function () { save(body.id); });
+      return el('div', { class: 'customField wide' }, [
+        el('div', { class: 'field' }, [el('label', { for: name.id, text: 'Name' }), name]),
+        el('div', { class: 'field wide' }, [el('label', { for: subj.id, text: 'Subject' }), subj]),
+        el('div', { class: 'field wide' }, [el('label', { for: body.id, text: 'Email' }), body]),
+        el('div', { class: 'customFoot wide' }, [el('button', { type: 'button', class: 'link', text: 'Take off', 'aria-label': 'Take the ' + t.name + ' template off', onclick: function () {
+          state.focusNext = 'newTemplate';
+          setSetting('emailTemplates', JSON.stringify(savedTemplates().filter(function (x, j) { return j !== i; })), t.name + ' taken off.');
+        } })])
+      ]);
+    });
+    kids.unshift(el('p', { class: 'quiet wide', text: 'Fill-ins: {name}, {grant}, {check-in date}, {to-dos} (their open to-dos on the grant), {to-do}, {due}, {meeting}, {me}. Two built-in templates are always there too.' }));
+    var newName = el('input', { id: 'newTemplate', autocomplete: 'off' });
+    var form = el('form', { class: 'customAdd wide' }, [el('div', { class: 'field' }, [el('label', { for: 'newTemplate', text: 'New template' }), newName]),
+      el('button', { type: 'submit', class: 'primary', id: 'addTemplate' }, ['Add template'])]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = newName.value.trim(); if (!n) { newName.focus(); return; }
+      var next = savedTemplates().concat([{ name: n, subject: BUILT_IN_TEMPLATES[0].subject, body: BUILT_IN_TEMPLATES[0].body }]);
+      state.focusNext = 'tpl-body-' + (next.length - 1);
+      setSetting('emailTemplates', JSON.stringify(next), n + ' added.');
+    });
+    kids.push(form);
+    return kids;
+  }
+
+  // Set up a meeting: a calendar invite for the owner, the team, the person assigned and you,
+  // made here and sent from Outlook
+  function meetingBox(rec, t) {
+    var box = el('div', { class: 'meetingBox' });
+    function closed() {
+      box.innerHTML = '';
+      box.appendChild(el('button', { type: 'button', class: 'quietBtn', id: 'meetBtn', onclick: openForm }, ['Set up a meeting']));
+    }
+    function openForm() {
+      box.innerHTML = '';
+      var who = [];
+      [rec && rec.owner].concat(rec ? splitPeople(rec.team) : [], [t && t.assignedTo, me()]).forEach(function (p) { if (p && who.indexOf(p) === -1) who.push(p); });
+      staffNames().forEach(function (p) { if (who.indexOf(p) === -1) who.push(p); });
+      var picked = {}; [rec && rec.owner].concat(rec ? splitPeople(rec.team) : [], [t && t.assignedTo, me()]).forEach(function (p) { if (p) picked[p] = true; });
+      var about = el('input', { id: 'meetAbout', autocomplete: 'off', value: (t ? t.title + ': ' : '') + (rec ? rec.name : '') });
+      var day = el('input', { id: 'meetDay', type: 'date' });
+      var time = el('input', { id: 'meetTime', type: 'time', value: '10:00' });
+      var len = el('select', { id: 'meetLength' }, [['30', '30 minutes'], ['60', '1 hour'], ['90', '1 and a half hours']].map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+      len.value = '30';
+      var boxes = who.map(function (p, i) {
+        var cb = el('input', { type: 'checkbox', id: 'meetWho-' + i, value: p }); cb.checked = !!picked[p];
+        return el('label', { class: 'toggle' }, [cb, p + (staffEmail(p) ? '' : ' (no email yet)')]);
+      });
+      var form = el('form', { class: 'fields meetForm' }, [
+        el('div', { class: 'field wide' }, [el('label', { for: about.id, text: 'About' }), about]),
+        el('div', { class: 'field' }, [el('label', { for: day.id, text: 'Date' }), day]),
+        el('div', { class: 'field' }, [el('label', { for: time.id, text: 'Start' }), time]),
+        el('div', { class: 'field' }, [el('label', { for: len.id, text: 'Length' }), len]),
+        el('fieldset', { class: 'field wide' }, [el('legend', { text: 'Invite' })].concat(boxes)),
+        el('div', { class: 'detailActions wide' }, [el('button', { type: 'submit', class: 'primary', id: 'meetSave' }, ['Make the invite']),
+          el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { closed(); box.querySelector('#meetBtn').focus(); } })])
+      ]);
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!day.value) { day.focus(); return; }
+        var people = boxes.map(function (b) { return b.querySelector('input'); }).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+        saveMeeting({ about: about.value.trim() || 'Meeting', day: day.value, time: time.value || '10:00', minutes: Number(len.value), people: people, rec: rec, t: t });
+        closed();
+      });
+      box.appendChild(form);
+      day.focus();
+    }
+    closed();
+    return box;
+  }
+  // Calendar invites as an .ics file: one or many meetings, you as the organizer and the
+  // people invited, so Outlook opens it ready to send. Nothing is sent from the page.
+  function icsText(s) { return String(s || '').replace(/[\;,]/g, function (c) { return '\\' + c; }).replace(/\n/g, '\\n'); }
+  function icsFold(line) { // lines longer than 75 characters continue on the next with a space
+    var out = []; while (line.length > 74) { out.push(line.slice(0, 74)); line = ' ' + line.slice(74); } out.push(line); return out.join('\r\n');
+  }
+  function icsLocal(d) { var p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + 'T' + p(d.getHours()) + p(d.getMinutes()) + '00'; }
+  function icsDownload(events, file, note) {
+    var mine = staffEmail(me());
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NAMI Southeast Wisconsin//Grants Dashboard//EN', 'METHOD:' + (mine ? 'REQUEST' : 'PUBLISH')];
+    events.forEach(function (ev, i) {
+      lines.push('BEGIN:VEVENT', 'UID:nami-' + ev.uid + '-' + Date.now() + '-' + i + '@grants', 'DTSTAMP:' + stamp);
+      if (ev.day) {
+        lines.push('DTSTART;VALUE=DATE:' + ev.day.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + derive.iso(derive.addDays(new Date(ev.day + 'T12:00:00'), 1)).replace(/-/g, ''));
+      } else lines.push('DTSTART:' + icsLocal(ev.start), 'DTEND:' + icsLocal(ev.end));
+      lines.push('SUMMARY:' + icsText(ev.summary));
+      if (ev.description) lines.push('DESCRIPTION:' + icsText(ev.description));
+      if (mine) lines.push('ORGANIZER;CN=' + icsText(me()) + ':mailto:' + mine);
+      (ev.people || []).forEach(function (p) { var e = staffEmail(p); if (e && e !== mine) lines.push('ATTENDEE;CN=' + icsText(p) + ';ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:' + e); });
+      lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    var a = el('a', { href: URL.createObjectURL(new Blob([lines.map(icsFold).join('\r\n')], { type: 'text/calendar' })), download: file });
+    document.body.appendChild(a); a.click(); a.remove();
+    toast(note + (mine ? '' : ' Add your email in Settings, Staff, so Outlook can send it.'));
+  }
+
+  function saveMeeting(m) {
+    var start = new Date(m.day + 'T' + m.time + ':00');
+    icsDownload([{ uid: 'meeting', start: start, end: new Date(start.getTime() + m.minutes * 60000), summary: m.about,
+      description: [m.rec ? m.rec.name : '', m.t ? 'To-do: ' + m.t.title : ''].filter(Boolean).join('. '), people: m.people }],
+      'meeting.ics', 'Invite saved. Open it in Outlook to send it.');
+  }
+
+  function saveInvite(t, rec) {
+    icsDownload([{ uid: 'checkin-' + t.id, day: t.checkIn, summary: 'Check in' + (t.assignedTo ? ' with ' + t.assignedTo : '') + ': ' + (t.title || 'to-do'),
+      description: (rec ? rec.name + '. ' : '') + (t.dueDate ? 'Due ' + niceDate(t.dueDate) + '.' : ''), people: [t.assignedTo] }],
+      'check-in.ics', 'Check-in saved for your calendar. Open it in Outlook.');
   }
 
   function stepsBlock(t) {
@@ -1575,14 +2024,12 @@
   }
 
   // A Records list made before this column existed gets it the first time it is needed
-  var extrasReady = null;
-  function saveExtras(r, next, note, focusSel) {
-    if (!extrasReady) extrasReady = rawStore.ensureColumn ? rawStore.ensureColumn('records', { key: 'ExtraFields', label: 'Fields for this record only', type: 'note' }) : Promise.resolve();
-    extrasReady.catch(function () { extrasReady = null; });
-    extrasReady.then(function () {
-      return store.update('records', r.id, { extraFields: next.length ? JSON.stringify(next) : '' });
-    }).then(function (res) {
-      render(); openDetail(r.id); var f = focusSel && dialog.querySelector(focusSel); if (f) f.focus();
+  // rebuild: true when a field comes or goes; a changed value leaves the pop-up as it is
+  function saveExtras(r, next, note, focusSel, rebuild) {
+    if (rebuild === undefined) rebuild = true;
+    store.update('records', r.id, { extraFields: next.length ? JSON.stringify(next) : '' }).then(function (res) {
+      render();
+      if (rebuild) { openDetail(r.id); var f = focusSel && dialog.querySelector(focusSel); if (f) f.focus(); }
       toast(note || 'Saved.', { list: 'records', before: res.before, focus: focusSel });
     }).catch(showProblem);
   }
@@ -1611,8 +2058,9 @@
       }
       if (typeof v === 'string') v = v.replace(/\s+$/, '');
       if (v === x.value) return;
+      x.value = v;
       var list = S.parseExtras(store.get('records', r.id).extraFields).map(function (y) { return y.key === x.key ? Object.assign({}, y, { value: v }) : y; });
-      saveExtras(r, list, 'Saved.', '#' + id);
+      saveExtras(r, list, 'Saved.', '#' + id, false);
     });
     if (input.tagName === 'INPUT') input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
     return el('div', { class: 'field own' + (x.type === 'note' ? ' wide' : '') }, [
@@ -1797,6 +2245,8 @@
     box.appendChild(setupSection('staff', 'Staff', staffEditor()));
     box.appendChild(setupSection('programs', 'Programs', programsEditor()));
     box.appendChild(setupSection('custom', 'Your own fields', customEditor()));
+    box.appendChild(setupSection('templates', 'Email templates', templatesEditor()));
+    box.appendChild(setupSection('automatic', 'Automatic', automaticEditor()));
     box.appendChild(el('h3', { class: 'setupGroup', text: 'Names on the page' }));
     S.labelGroups().forEach(function (g) {
       var kids = [];
@@ -1817,6 +2267,21 @@
     });
     box.appendChild(setupSection('layout', 'Layout', layoutEditor()));
     listEl.appendChild(box);
+  }
+
+  function automaticEditor() {
+    var kids = AUTOMATIC.map(function (a) {
+      var cb = el('input', { type: 'checkbox', id: 'auto-' + a.key, disabled: !!a.later });
+      cb.checked = auto(a.key);
+      cb.addEventListener('change', function () {
+        var m = autoMap(); m[a.key] = cb.checked;
+        state.focusNext = cb.id;
+        setSetting('automatic', AUTOMATIC.filter(function (x) { return !x.later; }).map(function (x) { return x.key + '=' + ((x.key in m ? m[x.key] : x.on) ? 'on' : 'off'); }).join('; '), (cb.checked ? 'On: ' : 'Off: ') + a.text + '.');
+      });
+      return el('label', { class: 'toggle wide autoRow' }, [cb, a.text + (a.later ? ' (' + a.later + ')' : '')]);
+    });
+    kids.push(el('p', { class: 'quiet wide', text: 'These switches are the same for everyone.' }));
+    return kids;
   }
 
   // Layout: which tiles show on this computer, and the order back to the start
@@ -1853,11 +2318,13 @@
           toast(note || 'Saved.', { list: 'people', before: res.before, focus: '#' + focus });
         }).catch(showProblem);
       };
-      var nameIn = el('input', { id: 'sf-name-' + p.id, autocomplete: 'off', value: p.person || '' });
+      // Your own row: another editor changes your name, email and access, so nobody locks themselves out
+      var self = !!state.who && p.person === state.who.person;
+      var nameIn = el('input', { id: 'sf-name-' + p.id, autocomplete: 'off', value: p.person || '', disabled: self });
       nameIn.addEventListener('change', function () { var v = nameIn.value.trim(); if (v) save({ person: v }, 'Saved.', nameIn.id); else nameIn.value = p.person || ''; });
-      var mailIn = el('input', { id: 'sf-email-' + p.id, type: 'email', autocomplete: 'off', value: p.email || '' });
+      var mailIn = el('input', { id: 'sf-email-' + p.id, type: 'email', autocomplete: 'off', value: p.email || '', disabled: self && !!p.email });
       mailIn.addEventListener('change', function () { save({ email: mailIn.value.trim() }, 'Saved.', mailIn.id); });
-      var roleSel = el('select', { id: 'sf-role-' + p.id }, [el('option', { value: 'Editor', text: 'Can edit' }), el('option', { value: 'Viewer', text: 'Can view' })]);
+      var roleSel = el('select', { id: 'sf-role-' + p.id, disabled: self }, [el('option', { value: 'Editor', text: 'Can edit' }), el('option', { value: 'Viewer', text: 'Can view' })]);
       roleSel.value = p.role === 'Editor' ? 'Editor' : 'Viewer';
       roleSel.addEventListener('change', function () { save({ role: roleSel.value }, p.person + (roleSel.value === 'Editor' ? ' can edit.' : ' can view.'), roleSel.id); });
       var mine = splitPeople(p.programs);
@@ -1867,14 +2334,15 @@
         cb.checked = i === 0 ? allOn : !allOn && mine.indexOf(prog) !== -1;
         cb.addEventListener('change', function () {
           var next;
-          if (i === 0) next = cb.checked ? 'All' : '';
+          if (i === 0 && !cb.checked) { cb.checked = true; toast('Tick the programs ' + p.person + ' works in, and All programs comes off by itself.'); return; }
+          if (i === 0) next = 'All';
           else {
             var cur = allOn ? [] : mine.slice();
             cur = cur.filter(function (x) { return x !== prog; });
             if (cb.checked) cur.push(prog);
             next = cur.length ? cur.join('; ') : 'All';
           }
-          save({ programs: next }, 'Programs saved.', cb.id);
+          save({ programs: next }, next === 'All' ? p.person + ' sees all programs.' : 'Programs saved.', cb.id);
         });
         return el('label', { class: 'toggle' }, [cb, prog]);
       });
@@ -1883,7 +2351,8 @@
         el('div', { class: 'field' }, [el('label', { for: mailIn.id, text: 'Email' }), mailIn]),
         el('div', { class: 'field' }, [el('label', { for: roleSel.id, text: 'On this page' }), roleSel]),
         el('fieldset', { class: 'field wide progPicks' }, [el('legend', { text: 'Programs' })].concat(progBoxes)),
-        el('div', { class: 'customFoot wide' }, [el('button', { type: 'button', class: 'link', text: 'Take off Staff', 'aria-label': 'Take ' + p.person + ' off Staff', onclick: function () {
+        self ? el('p', { class: 'quiet wide', text: 'This is you. Another editor can change your name, email and access.' }) : null,
+        self ? null : el('div', { class: 'customFoot wide' }, [el('button', { type: 'button', class: 'link', text: 'Take off Staff', 'aria-label': 'Take ' + p.person + ' off Staff', onclick: function () {
           var keep = Object.assign({}, p); delete keep.id;
           state.focusNext = 'newStaffName';
           store.remove('people', p.id).then(function () { refreshWho(); render(); toast(p.person + ' is off Staff.', { list: 'people', readd: keep }); }).catch(showProblem);
@@ -2040,6 +2509,53 @@
     render();
   }
 
+  // Problems and ideas: notes about the page itself, to copy and send to Jesse.
+  // Editors' notes are shared (Settings row "feedback"); a viewer's stay in their browser.
+  var NOTES_KEY = 'nami-grants-v2-notes';
+  function readNotes() {
+    var raw = isEditor() ? setting('feedback') : (function () { try { return window.localStorage.getItem(NOTES_KEY) || ''; } catch (e) { return ''; } })();
+    try { var v = JSON.parse(raw || '[]'); return Array.isArray(v) ? v.filter(function (n) { return n && n.text; }) : []; } catch (e) { return []; }
+  }
+  function writeNotes(list, note, focus) {
+    state.focusNext = focus || null;
+    if (isEditor()) return setSetting('feedback', JSON.stringify(list), note);
+    var before = (function () { try { return window.localStorage.getItem(NOTES_KEY); } catch (e) { return null; } })();
+    try { window.localStorage.setItem(NOTES_KEY, JSON.stringify(list)); } catch (e) { /* fine without */ }
+    renderNotes();
+    toast(note, null, { label: 'Undo', run: function () { try { if (before === null) window.localStorage.removeItem(NOTES_KEY); else window.localStorage.setItem(NOTES_KEY, before); } catch (e) { /* fine */ } renderNotes(); } });
+    return Promise.resolve();
+  }
+  function notesText(list) {
+    return list.map(function (n) { return '- ' + niceDate(n.at) + ', ' + (n.person || 'someone') + ': ' + n.text; }).join('\n');
+  }
+  function renderNotes() {
+    var ul = $('noteList'); if (!ul) return;
+    var list = readNotes();
+    ul.innerHTML = '';
+    list.forEach(function (n, i) {
+      ul.appendChild(el('li', { class: 'note' }, [
+        el('span', { class: 'quiet', text: niceDate(n.at) + ', ' + (n.person || 'someone') }),
+        el('span', { class: 'noteText', text: n.text }),
+        el('button', { type: 'button', class: 'link', text: 'Take off', 'aria-label': 'Take this note off', onclick: function () {
+          writeNotes(readNotes().filter(function (x, j) { return j !== i; }), 'Note taken off.', 'noteText');
+        } })
+      ]));
+    });
+    $('noteCopy').hidden = !list.length;
+  }
+  $('noteForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = $('noteText').value.trim();
+    if (!text) { $('noteText').focus(); return; }
+    writeNotes(readNotes().concat([{ at: derive.iso(new Date()), person: me(), text: text }]), 'Note saved.', 'noteText').then(function () { $('noteText').value = ''; $('noteText').focus(); }).catch(showProblem);
+  });
+  $('noteCopy').addEventListener('click', function () {
+    var text = 'Problems and ideas from the Grants Dashboard\n' + notesText(readNotes());
+    var done = function () { toast('Copied. Paste them into a message to Jesse.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { $('noteText').value = text; $('noteText').select(); toast('Selected. Press Ctrl+C to copy.'); });
+    else { $('noteText').value = text; $('noteText').select(); toast('Selected. Press Ctrl+C to copy.'); }
+  });
+
   function renderWho() {
     var box = $('who');
     box.innerHTML = '';
@@ -2122,7 +2638,7 @@
   // Coming back to the page after a while reads the lists again, so other people's changes show
   var STALE_MS = 2 * 60 * 1000;
   document.addEventListener('visibilitychange', function () {
-    if (!onSharePoint || document.hidden || !state.who || dialog.open) return;
+    if (!onSharePoint || document.hidden || !state.who || dialog.open || !auto('refresh')) return;
     if (store.loadedAt && Date.now() - store.loadedAt.getTime() < STALE_MS) return;
     rawStore.load().then(function () { render(); }).catch(function (e) { console.warn('Could not read the lists again:', e.message); });
   });

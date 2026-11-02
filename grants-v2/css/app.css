@@ -337,3 +337,22 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; font-size: .9rem; color:
 .setupGroup { margin: 18px 0 6px; font-size: 1.05rem; }
 .setup > details + details { margin-top: 8px; }
 .progRow { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding: 4px 0; }
+a.btnLink { display: inline-block; text-decoration: none; color: var(--nami-blue); border: 1px solid #b8c9e0; border-radius: var(--radius); padding: 8px 18px; }
+a.btnLink:hover { background: #e7eef8; }
+.autoRow input:disabled + * , .autoRow:has(input:disabled) { color: var(--quiet); }
+.meetingBox { display: grid; gap: 8px; }
+.meetForm { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; }
+.notesBox { width: min(1100px - 32px, 100% - 32px); margin: 24px auto 0; padding: 12px 16px; background: var(--card); border-top: 4px solid var(--nami-sky); }
+.notesBox summary { cursor: pointer; font-weight: 700; color: var(--nami-blue); }
+.noteButtons { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.notes .note { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: baseline; border-bottom: 1px solid var(--line); padding: 6px 0; }
+.noteText { white-space: pre-wrap; }
+@media (max-width: 700px) { .notes .note { grid-template-columns: 1fr auto; } .notes .note .quiet { grid-column: 1 / -1; } }
+.planBlock { display: grid; gap: 8px; }
+.planBlock h3 { margin: 10px 0 0; font-size: 1rem; }
+.planRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.planRow input, .planRow select { width: auto; }
+.dateList li { display: flex; gap: 10px; align-items: baseline; }
+.composer { display: grid; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; }
+a.btnPrimary { background: var(--nami-blue); color: #fff; border: 0; font-weight: 700; }
+a.btnPrimary:hover { background: var(--nami-blue-dark); }

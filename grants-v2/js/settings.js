@@ -46,6 +46,7 @@
     { key: 'contact', text: 'Contact' },
     { key: 'notes', text: 'Notes and links' },
     { key: 'tasks', text: 'To-do' },
+    { key: 'checkins', text: 'Check-ins' },
     { key: 'awardYears', text: 'Award years' },
     { key: 'taskDetails', text: 'To-do details' },
     { key: 'feeds', text: 'Feeds' },

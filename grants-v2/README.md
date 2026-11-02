@@ -10,11 +10,17 @@ Open `index.html` in a browser, straight from the folder; no server and no insta
 
 - The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; drag its six dots to move it (or focus them and use the arrow keys).
 - **Filters** narrow every tile. **Search** finds any record.
-- **+ Add a grant or contract** asks only for a name. Click a record to see every field; each saves when you leave it, with **Undo**.
-- Click a to-do to check off its steps and add comments.
+- **⌂ Home** (top bar, and in every pop-up) goes back to the tiles from anywhere. The title does too.
+- **+ Add a grant or contract** opens a pop-up that asks only for a name, then shows the whole record. Click a record to see every field; each saves when you leave it, with **Undo**.
+- A small **+** at the end of each part of a record adds a field: to every record, or just that one.
+- Each record has an **Owner** and a **Team**, picked from Staff. Their records count as theirs on My to-do and in program views.
+- Click a to-do to check off its steps and add comments. A to-do has **Assigned to**, a due date, a **Check in on** date, **Email reminder** (opens Outlook with the email written), **Add check-in to calendar**, and **Set up a meeting** (records have it too). Invites and emails go out only when you send them.
 - **Funding Watch** shows Grants.gov results (sample ones when opened from a folder) with **Add as Potentials**, your own feeds, and the watch list of funding cycles. When a cycle's month or a record's watch date arrives, a Review item shows in To-do.
 - **Signed in as** (top right) switches between the sample people: Morgan, Dana and Lee are editors; Sam and Pat are viewers of two programs each.
-- **Rename and fields** (top bar, editors) renames anything and adds your own fields. **All lists** shows every list as stored. **Start the sample over** brings back the original sample.
+- **Check-ins** on each grant: who is responsible, the meeting title, check-in dates (3, 6, 10 months, repeating, or any date) and reminder email dates. **Make calendar invites** saves them all for Outlook; each date comes up on To-do.
+- **Email reminder** opens an email to edit first, from a template; save your own templates.
+- **Problems and ideas** (bottom of the page): notes about the page, with **Copy all** to send to Jesse.
+- **⚙ Settings** (top right, editors): Staff, Programs, Your own fields, Email templates, Automatic (an on and off switch for everything the page does by itself), names on the page, and Layout (show or hide tiles). **All lists** shows every list as stored. **Start the sample over** brings back the original sample.
 
 ## Sign-in
 

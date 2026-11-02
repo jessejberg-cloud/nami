@@ -46,6 +46,20 @@
     <button type="button" id="toastUndo" class="link">Undo</button>
   </div>
 
+  <details class="notesBox" id="notesBox">
+    <summary>Problems and ideas</summary>
+    <p class="quiet">Write down anything that goes wrong or anything you wish the page did. Copy them all to send to Jesse.</p>
+    <form id="noteForm">
+      <label for="noteText" class="sr">A problem or an idea</label>
+      <textarea id="noteText" rows="3"></textarea>
+      <div class="noteButtons">
+        <button type="submit" class="primary" id="noteSave">Save note</button>
+        <button type="button" class="quietBtn" id="noteCopy">Copy all</button>
+      </div>
+    </form>
+    <ul class="plainList notes" id="noteList"></ul>
+  </details>
+
   <footer class="foot">
     <span id="stamp"></span>
     <span>

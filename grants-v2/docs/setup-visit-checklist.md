@@ -51,11 +51,16 @@ Follow README, "Sign-in":
 
 ## 6. People and a first look (30 minutes, with Angela)
 
-- [ ] People list: Angela and the other editors as Editor; staff as Viewer with their programs
+- [ ] **⚙ Settings, Staff:** Angela and the other editors as Can edit; staff as Can view with their programs, each with their NAMI email
 - [ ] Angela signs in on her own computer and sees herself as Editor
 - [ ] A viewer signs in and sees only their programs
 - [ ] Angela adds a record, changes its status, and uses Undo
 - [ ] Walk through the admin guide (`docs/admin-guide.md`) together
+
+## 7. Reminder emails sent by themselves (optional, 30 minutes, Emily or Nicole)
+
+- [ ] Decide whether NAMI wants reminder emails to go out without anyone pressing Send
+- [ ] If yes: a Power Automate flow that reads each record's CheckInPlan reminder dates each morning and emails the responsible people (built with Jesse; then the Automatic switch for it can come on)
 
 ## After the visit
 

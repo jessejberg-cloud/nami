@@ -54,7 +54,8 @@
         { key: 'watchDate', sp: 'WatchDate', label: 'Watch date', type: 'date' },
         { key: 'watchNote', sp: 'WatchNote', label: 'Watch note', type: 'note' },
         // Fields added to just this record (JSON, kept by the page; see settings.parseExtras)
-        { key: 'extraFields', sp: 'ExtraFields', label: 'Fields for this record only', type: 'note', hidden: true }
+        { key: 'extraFields', sp: 'ExtraFields', label: 'Fields for this record only', type: 'note', hidden: true },
+        { key: 'checkInPlan', sp: 'CheckInPlan', label: 'Check-ins', type: 'note', hidden: true }
       ]
     },
     {
@@ -73,6 +74,7 @@
         { key: 'type', sp: 'TaskType', label: 'Type', type: 'choice', choices: ['Thank-you letter', '6-month report', '1-year report', 'Review', 'Other'] },
         { key: 'dueDate', sp: 'DueDate', label: 'Due date', type: 'date' },
         { key: 'assignedTo', sp: 'AssignedTo', label: 'Assigned to', type: 'person' },
+        { key: 'checkIn', sp: 'CheckIn', label: 'Check in on', type: 'date' },
         { key: 'steps', sp: 'Steps', label: 'Steps (one per line)', type: 'note' },
         { key: 'done', sp: 'Done', label: 'Done', type: 'yesno' }
       ]

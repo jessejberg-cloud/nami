@@ -23,10 +23,14 @@ To remove someone, delete their People row and take away their SharePoint permis
 
 ## Change words, dropdowns and fields
 
-- **Words on screen:** on the dashboard, editors press **Rename and fields** (top of the page). Type a new name in any box; clear the box to go back.
-- **Programs and grant types:** in the **Settings** list, edit the `programs` or `grantTypes` row. Separate choices with `;`.
+- **Staff:** on the dashboard, editors press **⚙ Settings**, then **Staff**: name, email, programs, and whether each person can edit. Sign-in matches by email. Owner, Team and Assigned to pick from here.
+- **Programs:** **⚙ Settings**, then **Programs**. Taking one off the list leaves records that use it as they are.
+- **Email templates:** **⚙ Settings**, then **Email templates**, or **Save as a template** in any email. Fill-ins such as {name} and {to-dos} are filled for each email.
+- **Automatic:** **⚙ Settings**, then **Automatic**. Each thing the page does by itself has a switch, the same for everyone. Reminder emails arrive with a Power Automate flow at the setup visit.
+- **Words on screen:** **⚙ Settings**, then the boxes under **Names on the page**. Type a new name in any box; clear the box to go back.
+- **Grant types:** in the **Settings** list, edit the `grantTypes` row. Separate choices with `;`.
 - **Due soon:** the `dueSoonDays` row in Settings (14 to start).
-- **A new field on every record:** **Rename and fields**, then **Your own fields**. The page adds the column to the Records list itself.
+- **A new field:** the small **+** in any part of a record, then **Every record** or **Just this record**. Or **⚙ Settings**, then **Your own fields**. The page adds the column to the Records list itself.
 
 ## Funding Watch
 
