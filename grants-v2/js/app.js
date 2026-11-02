@@ -1288,6 +1288,7 @@
   dialog.addEventListener('close', function () {
     var was = state.openId, wasTask = state.openTaskId, wasWatch = state.openWatchId, wasFeed = state.openFeedId;
     state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
+    state.editing = {}; // the next time a grant opens, it opens as reading
     if ($('toast').parentNode === dialog) document.body.appendChild($('toast'));
     draw();
     // Back on the row that was opened, so the keyboard picks up where it left off
@@ -1326,7 +1327,7 @@
   function teamField(r) {
     var name = label('team');
     var team = splitPeople(r.team);
-    if (!isEditor()) return readOnlyField({ type: 'people' }, 'team', team.join(', '), name, true);
+    if (!isEditor() || reading) return readOnlyField({ type: 'people' }, 'team', team.join(', '), name, true);
     var names = staffNames();
     team.forEach(function (p) { if (names.indexOf(p) === -1) names.push(p); });
     var boxes = names.filter(function (p) { return p !== r.owner; }).map(function (p, i) {
@@ -1364,7 +1365,7 @@
     var id = 'f-' + key;
     var value = r[key] === undefined || r[key] === null ? '' : r[key];
     var input;
-    if (!isEditor()) return readOnlyField(col, key, value, name, opts.wide);
+    if (!isEditor() || (list === 'records' && reading)) return readOnlyField(col, key, value, name, opts.wide);
 
     if (col.type === 'yesno') {
       input = el('select', { id: id }, [el('option', { value: '', text: '' }), el('option', { value: 'Yes', text: 'Yes' }), el('option', { value: 'No', text: 'No' })]);
@@ -1473,12 +1474,20 @@
     return ul;
   }
 
+  // A grant opens as easy reading; ✎ Edit turns its boxes on until the pop-up closes.
+  // A new grant, or a view opened at a particular field, opens ready to type.
+  var reading = false;
+  var EDIT_FIRST = 'nami-grants-v2-edit-first';
+  function editFirst() { try { return window.localStorage.getItem(EDIT_FIRST) === 'yes'; } catch (e) { return false; } }
+  state.editing = {};
   function openDetail(id, focusKey) {
     var r = store.get('records', id);
     if (!r) { closeDetail(); return; }
     refreshLabels();
     state.openId = id; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null;
     var editor = isEditor();
+    if (editor && focusKey) state.editing[id] = true;
+    reading = editor && !state.editing[id] && !editFirst();
     var today = new Date();
     var shownStatus = derive.shown(r, today);
     var archived = r.status === 'Archived';
@@ -1499,11 +1508,17 @@
           el('h2', { id: 'detailName', text: r.name }),
           el('p', { class: 'detailStatus' }, [chip(shownStatus)].concat(derive.tags(r, today, dueDays()).map(tagEl)))
         ]),
-        closeButtons()
+        el('span', { class: 'headTools' }, [
+          editor ? el('button', { type: 'button', class: 'quietBtn editBtn', id: reading ? 'editRecord' : 'doneEditing', onclick: function () {
+            state.editing[id] = reading;
+            openDetail(id);
+            var f = dialog.querySelector(state.editing[id] ? '#f-name' : '#editRecord'); if (f) f.focus();
+          } }, [reading ? '✎ Edit' : 'Done editing']) : null,
+          closeButtons()])
       ]),
       el('p', { class: 'problem', hidden: true }),
       el('div', { class: 'fields' }, [
-        field(r, 'name', { wide: true }),
+        editor && !reading ? field(r, 'name', { wide: true }) : null,
         statusField,
         archived ? field(r, 'archiveReason') : null,
         field(r, 'funder'),
@@ -1522,7 +1537,7 @@
         !!(r.contactName || r.contactEmail || r.contactPhone) || hasOwn(r, 'contact', custom, extras)),
       section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)].concat(ownFields(r, 'notes', custom, extras), [addFieldButton(r, 'notes')]),
         !!(r.comments || r.links || r.folderLink) || hasOwn(r, 'notes', custom, extras)),
-      tasks.length || editor ? section('tasks', [taskList(tasks), editor ? addTaskForm(r) : null], true) : null,
+      tasks.length || (editor && !reading) ? section('tasks', [taskList(tasks), editor && !reading ? addTaskForm(r) : null], true) : null,
       planSection(r),
       years.length ? section('awardYears', [yearList(years)], true) : null,
       section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(ownFields(r, 'more', custom, extras), [addFieldButton(r, 'more')]),
@@ -1641,12 +1656,13 @@
   function planSection(r) {
     var plan = parsePlan(r.checkInPlan);
     var has = plan.dates.length || plan.reminders.length || plan.people.length;
-    if (!isEditor()) {
+    if (!isEditor() || reading) {
       if (!has) return null;
+      var acts = isEditor() ? planActions(r) : null;
       return section('checkins', [el('div', { class: 'wide', id: 'planBlock' }, [
         el('p', { text: (plan.title || 'Check-in: ' + r.name) + (plan.people.length ? ', with ' + plan.people.join(', ') : '') }),
         plan.dates.length ? el('p', { class: 'quiet', text: 'Check-ins: ' + plan.dates.map(niceDate).join(', ') }) : null,
-        plan.reminders.length ? el('p', { class: 'quiet', text: 'Reminder emails: ' + plan.reminders.map(niceDate).join(', ') }) : null])], false);
+        plan.reminders.length ? el('p', { class: 'quiet', text: 'Reminder emails: ' + plan.reminders.map(niceDate).join(', ') }) : null].concat(acts || []))], false);
     }
     return section('checkins', [planBlock(r)], !!has);
   }
@@ -1744,8 +1760,6 @@
       } }, [text]);
       return el('div', {}, [btn, inner]);
     }
-    var mailBox = el('div', { class: 'mailBox wide' });
-    var meetTitle = function () { return plan.title || 'Check-in: ' + r.name; };
     return el('div', { class: 'planBlock wide', id: 'planBlock' }, [
       el('div', { class: 'fields' }, [who,
         el('div', { class: 'field wide' }, [el('label', { for: 'planTitle', text: 'Meeting title' }), title]),
@@ -1762,6 +1776,15 @@
       moreBox('reminders', 'Add reminder dates', [
         el('div', { class: 'planRow' }, [weekBtn]),
         el('div', { class: 'planRow' }, [el('label', { for: 'plan-reminders-add', class: 'sr', text: 'A reminder email date' }), rpick, rBtn])]),
+    ].concat(planActions(r)));
+  }
+
+
+  // Make calendar invites and Email reminder: the same in reading and in editing
+  function planActions(r) {
+    var mailBox = el('div', { class: 'mailBox wide' });
+    var meetTitle = function () { return parsePlan(store.get('records', r.id).checkInPlan).title || 'Check-in: ' + r.name; };
+    return [
       el('div', { class: 'detailActions' }, [
         el('button', { type: 'button', class: 'primary', id: 'planInvites', onclick: function () {
           var cur = parsePlan(store.get('records', r.id).checkInPlan);
@@ -1780,7 +1803,7 @@
         } }, ['Email reminder'])
       ]),
       mailBox
-    ]);
+    ];
   }
 
   // ---------- Emails: pick a template, change the words, open it in Outlook ----------
@@ -2098,7 +2121,7 @@
   // A field that only this record has: saves as you leave it, like the rest, and can be taken off
   function extraField(r, x) {
     var id = 'fx-' + x.key;
-    if (!isEditor()) return readOnlyField({ type: x.type }, 'x-' + x.key, x.value, x.label, x.type === 'note');
+    if (!isEditor() || reading) return readOnlyField({ type: x.type }, 'x-' + x.key, x.value, x.label, x.type === 'note');
     var input;
     if (x.type === 'note') { input = el('textarea', { id: id, rows: 2 }); input.value = x.value; }
     else if (x.type === 'yesno') {
@@ -2137,7 +2160,7 @@
   // The small + at the end of each part of a record: name the field, pick its kind, then say
   // whether every record gets it or just this one
   function addFieldButton(r, sectionKey) {
-    if (!isEditor()) return null;
+    if (!isEditor() || reading) return null;
     var box = el('div', { class: 'addField wide', 'data-add-field': sectionKey });
     function closed() {
       box.innerHTML = '';
@@ -2357,6 +2380,13 @@
       });
       return el('label', { class: 'toggle' }, [cb, tileName(t.key)]);
     });
+    var ef = el('input', { type: 'checkbox', id: 'editFirst' });
+    ef.checked = editFirst();
+    ef.addEventListener('change', function () {
+      try { if (ef.checked) window.localStorage.setItem(EDIT_FIRST, 'yes'); else window.localStorage.removeItem(EDIT_FIRST); } catch (e) { /* fine */ }
+      toast(ef.checked ? 'Grants open ready to edit.' : 'Grants open as reading.', null, { label: 'Undo', run: function () { ef.checked = !ef.checked; ef.dispatchEvent(new Event('change')); } });
+    });
+    kids.push(el('label', { class: 'toggle wide' }, [ef, 'Open grants ready to edit']));
     kids.push(el('button', { type: 'button', class: 'quietBtn', id: 'resetLayout', onclick: function () { setLayout(null, 'Layout back to the start.'); } }, ['Reset layout']));
     return kids;
   }

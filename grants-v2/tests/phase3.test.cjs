@@ -91,6 +91,7 @@ try { playwright = require('playwright'); } catch (e) { /* skipped */ }
 test('in the browser: tiles, filters, toggle, To-do and full lists', { skip: !playwright && 'Playwright is not installed' }, async () => {
   const browser = await playwright.chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('file://' + path.resolve(__dirname, '../index.html'));

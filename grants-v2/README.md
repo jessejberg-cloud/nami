@@ -11,7 +11,7 @@ Open `index.html` in a browser, straight from the folder; no server and no insta
 - The home page has tiles: Needs attention, To-do, Pipeline, Awards, County contracts, Archive and Funding Watch. Each tile's title opens and closes it; drag its six dots to move it (or focus them and use the arrow keys).
 - **Filters** narrow every tile. **Search** finds any record.
 - **⌂ Home** (top bar, and in every pop-up) goes back to the tiles from anywhere. The title does too.
-- **+ Add a grant or contract** opens a pop-up that asks only for a name, then shows the whole record. Click a record to see every field; each saves when you leave it, with **Undo**.
+- **+ Add a grant or contract** opens a pop-up that asks only for a name, then shows the whole record. Click a record to read it; **✎ Edit** turns its boxes on, and each saves when you leave it, with **Undo**.
 - A small **+** at the end of each part of a record adds a field: to every record, or just that one.
 - Each record has an **Owner** and a **Team**, picked from Staff. Their records count as theirs on My to-do and in program views.
 - Click a to-do to check off its steps and add comments. A to-do has **Assigned to**, a due date, a **Check in on** date, **Email reminder** (opens Outlook with the email written), **Add check-in to calendar**, and **Set up a meeting** (records have it too). Invites and emails go out only when you send them.

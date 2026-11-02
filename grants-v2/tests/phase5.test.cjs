@@ -97,6 +97,7 @@ try { playwright = require('playwright'); } catch (e) { /* skipped */ }
 test('in the browser: a viewer cannot edit records but can log progress', { skip: !playwright && 'Playwright is not installed' }, async () => {
   const browser = await playwright.chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   page.setDefaultTimeout(8000);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -138,7 +139,8 @@ test('in the browser: a viewer cannot edit records but can log progress', { skip
   await page.waitForSelector('dialog[open]');
   assert.equal(await page.locator('dialog input, dialog select, dialog textarea').count(), 0, 'no editable fields');
   assert.equal(await page.locator('dialog .detailActions').count(), 0, 'no Archive');
-  assert.equal(await page.textContent('#f-name'), 'School Outreach Pilot');
+  assert.equal(await page.textContent('#detailName'), 'School Outreach Pilot', 'the name is the heading, not repeated as a row');
+  assert.equal(await page.locator('#f-name').count(), 0);
   const refused = await page.evaluate(() => window.NAMI.app.store.update('records', window.NAMI.app.state.openId, { name: 'Hacked' }).then(() => 'saved', (e) => e.message));
   assert.equal(refused, 'Only editors can change this.');
 
@@ -225,6 +227,7 @@ test('in the browser: a viewer cannot edit records but can log progress', { skip
 test('in the browser: Microsoft mode without an app registration says so plainly', { skip: !playwright && 'Playwright is not installed' }, async () => {
   const browser = await playwright.chromium.launch();
   const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   page.setDefaultTimeout(8000);
   await page.route('**/js/config.js', (route) => route.fulfill({ contentType: 'text/javascript', body: "window.NAMI_CONFIG = { mode: 'microsoft', microsoft: { clientId: '', tenantId: '' } };" }));
   await page.goto('file://' + path.resolve(__dirname, '../index.html'));

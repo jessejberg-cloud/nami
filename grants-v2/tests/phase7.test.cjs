@@ -212,6 +212,7 @@ const FAKE_MSAL = `window.msal = {
 async function spPage(browser, g) {
   const fs = require('node:fs');
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   page.setDefaultTimeout(8000);
   const cfg = fs.readFileSync(path.resolve(__dirname, '../js/config.js'), 'utf8')
     .replace("mode: 'sample',", "mode: 'microsoft',")

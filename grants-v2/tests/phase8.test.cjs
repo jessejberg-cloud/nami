@@ -22,6 +22,7 @@ try { playwright = require('playwright'); } catch (e) { /* skipped */ }
 async function openPage() {
   const browser = await playwright.chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   page.setDefaultTimeout(8000);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -413,6 +414,47 @@ test('in the browser: audit fixes: renaming staff follows them, hidden tiles kee
     await page.click('#mailSaveTemplate');
     await page.waitForFunction(() => (window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates') || {}).value);
     assert.equal(await page.evaluate(() => JSON.parse(window.NAMI.app.store.items('settings').find((s) => s.key === 'emailTemplates').value)[0].body), 'Is there anything blocking?');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('in the browser: a grant opens as reading; Edit turns the boxes on; a new grant opens ready to type', { skip: !playwright && 'Playwright is not installed' }, async () => {
+  const browser = await playwright.chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  page.setDefaultTimeout(8000);
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  try {
+    await page.goto('file://' + path.resolve(__dirname, '../index.html'));
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.reload();
+    await page.waitForSelector('body[data-loaded=yes]');
+    await page.locator('[data-tile=pipeline] .mini .link').first().click();
+    await page.waitForSelector('dialog[open] #editRecord');
+    assert.equal(await page.locator('dialog .fields input, dialog .fields select, dialog .fields textarea').count(), 0, 'reading, not a form');
+    assert.equal(await page.locator('dialog .plus').count(), 0, 'no + while reading');
+    await page.click('#editRecord');
+    await page.waitForSelector('#f-name');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'f-name');
+    assert.ok(await page.locator('dialog .plus').count() > 0);
+    await page.click('#doneEditing');
+    await page.waitForSelector('#editRecord');
+    await page.keyboard.press('Escape');
+    // A new grant opens ready to type
+    await page.click('#add');
+    await page.fill('#addName', 'Brand new grant');
+    await page.press('#addName', 'Enter');
+    await page.waitForSelector('#f-status');
+    assert.ok(await page.isVisible('#doneEditing'));
+    await page.keyboard.press('Escape');
+    // Settings, Layout: open grants ready to edit
+    await page.click('#setupBtn');
+    await page.click('[data-setup=layout] summary');
+    await page.check('#editFirst');
+    await page.click('#homeBtn');
+    await page.locator('[data-tile=pipeline] .mini .link').first().click();
+    await page.waitForSelector('dialog[open] #f-name');
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });

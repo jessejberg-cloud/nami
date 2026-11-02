@@ -49,6 +49,7 @@ try { playwright = require('playwright'); } catch (e) { /* the browser flow is s
 test('in the browser: add, edit, status change, archive, restore, Undo, all kept after reload', { skip: !playwright && 'Playwright is not installed' }, async () => {
   const browser = await playwright.chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  await page.addInitScript(() => { try { localStorage.setItem('nami-grants-v2-edit-first', 'yes'); } catch (e) { /* fine */ } }); // older tests type straight into a grant
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('file://' + path.resolve(__dirname, '../index.html'));
