@@ -51,7 +51,9 @@
         { key: 'links', sp: 'Links', label: 'Links', type: 'note' },
         { key: 'folderLink', sp: 'FolderLink', label: 'Folder link', type: 'url' },
         { key: 'watchDate', sp: 'WatchDate', label: 'Watch date', type: 'date' },
-        { key: 'watchNote', sp: 'WatchNote', label: 'Watch note', type: 'note' }
+        { key: 'watchNote', sp: 'WatchNote', label: 'Watch note', type: 'note' },
+        // Fields added to just this record (JSON, kept by the page; see settings.parseExtras)
+        { key: 'extraFields', sp: 'ExtraFields', label: 'Fields for this record only', type: 'note', hidden: true }
       ]
     },
     {
@@ -63,7 +65,7 @@
       ]
     },
     {
-      key: 'tasks', sp: 'Tasks', label: 'Tasks',
+      key: 'tasks', sp: 'Tasks', label: 'To-do',
       columns: [
         { key: 'record', sp: 'Record', label: 'Record', type: 'lookup', list: 'records' },
         { key: 'title', sp: 'Title', label: 'Title', type: 'text' },
@@ -77,7 +79,7 @@
     {
       key: 'progress', sp: 'Progress', label: 'Progress',
       columns: [
-        { key: 'task', sp: 'Task', label: 'Task', type: 'lookup', list: 'tasks' },
+        { key: 'task', sp: 'Task', label: 'To-do item', type: 'lookup', list: 'tasks' },
         { key: 'person', sp: 'Person', label: 'Person', type: 'person' },
         { key: 'step', sp: 'Step', label: 'Step', type: 'text' },
         { key: 'done', sp: 'Done', label: 'Done', type: 'yesno' },

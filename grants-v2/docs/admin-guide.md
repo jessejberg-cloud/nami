@@ -17,7 +17,7 @@ Everything people type is saved straight to the SharePoint lists. The page itsel
 
 1. Open the **People** list on the SharePoint site.
 2. Add a row: their name, the address they sign in with, Role (**Editor** or **Viewer**), and Programs (`All`, or program names separated by `;`).
-3. On the SharePoint site, give editors **Edit** permission. Give viewers **Read**, plus **Contribute** on the Progress list only, so they can check off their own task steps.
+3. On the SharePoint site, give editors **Edit** permission. Give viewers **Read**, plus **Contribute** on the Progress list only, so they can check off the steps on their own to-dos.
 
 To remove someone, delete their People row and take away their SharePoint permission. Someone signed in but not on the People list sees everything as a viewer.
 

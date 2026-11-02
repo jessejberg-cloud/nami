@@ -26,7 +26,9 @@ test('every renamable name has a key and default words', () => {
 test('custom columns read and write the Settings row', () => {
   const cols = S.parseCustom('boardMeeting|Board meeting|text; reportCadence|Report cadence|choice|Monthly, Yearly|off; bad key|x|text');
   assert.equal(cols.length, 2, 'a malformed key is left out');
-  assert.deepEqual(cols[1], { key: 'reportCadence', label: 'Report cadence', type: 'choice', choices: ['Monthly', 'Yearly'], filter: false });
+  assert.deepEqual(cols[1], { key: 'reportCadence', label: 'Report cadence', type: 'choice', choices: ['Monthly', 'Yearly'], filter: false, section: 'more' });
+  assert.equal(S.parseCustom('a|A|text||on|contact')[0].section, 'contact', 'a field can show in any part of a record');
+  assert.equal(S.parseCustom('a|A|text||on|nowhere')[0].section, 'more');
   assert.equal(cols[0].filter, true, 'filters are on unless switched off');
   assert.deepEqual(S.parseCustom(S.formatCustom(cols)), cols, 'round trip');
   assert.ok(!S.formatCustom([{ key: 'a', label: 'A | B; C', type: 'text' }]).includes('B;'), 'separators in a name are made safe');

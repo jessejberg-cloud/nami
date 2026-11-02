@@ -423,11 +423,15 @@
     window.scrollTo(0, 0);
   }
 
+  // Home from anywhere: closes any open record, task or form and goes back to the tiles
   function showHome() {
+    closeDetail();
     state.view = 'home';
     state.list = null;
     if (state.query) { state.query = ''; $('search').value = ''; }
+    $('addForm').hidden = true;
     render();
+    window.scrollTo(0, 0);
   }
 
   // ---------- the home page: tiles ----------
@@ -1016,7 +1020,7 @@
     var body = el('div', { class: 'detailBody', 'data-watch-view': id }, [
       el('header', { class: 'detailHead' }, [
         el('div', {}, [el('h2', { id: 'detailName', text: w.name || 'Watch' }), el('p', { class: 'detailStatus quiet', id: 'watchWhen', text: openingText(w, new Date()) })]),
-        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+        closeButtons()
       ]),
       el('p', { class: 'problem', hidden: true }),
       rec ? el('p', { class: 'taskRecord' }, [el('button', { type: 'button', class: 'link', id: 'watchRecord', text: '← ' + rec.name, onclick: function () { openDetail(rec.id); } })]) : null,
@@ -1040,7 +1044,7 @@
     mount(el('div', { class: 'detailBody', 'data-feed-view': id }, [
       el('header', { class: 'detailHead' }, [
         el('div', {}, [el('h2', { id: 'detailName', text: f.name || 'Feed' })]),
-        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+        closeButtons()
       ]),
       el('p', { class: 'problem', hidden: true }),
       el('div', { class: 'fields' }, [field(f, 'name', { list: 'feeds', wide: true }), field(f, 'type', { list: 'feeds' }), field(f, 'on', { list: 'feeds' }),
@@ -1110,7 +1114,7 @@
     renderWho();
     document.querySelector('label[for=addName]').textContent = label('name');
     document.querySelector('label[for=addType]').textContent = label('recordType');
-    document.querySelector('h1').textContent = document.title = T('page.title', 'Grants Dashboard');
+    $('homeLink').textContent = document.title = T('page.title', 'Grants Dashboard');
     if (state.query) {
       state.view = 'list';
       state.list = { title: 'Search', test: function () { return true; } };
@@ -1148,6 +1152,13 @@
 
   // ---------- the detail view ----------
 
+  // Every open view has Home (back to the tiles, from anywhere) beside Close
+  function closeButtons() {
+    return el('span', { class: 'closeButtons' }, [
+      el('button', { type: 'button', class: 'link dialogHome', onclick: function () { showHome(); var h = $('homeBtn'); if (h) h.focus(); } }, ['⌂ Home']),
+      el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+    ]);
+  }
   function closeDetail() { state.openId = null; state.openTaskId = null; state.openWatchId = null; state.openFeedId = null; if (dialog.open) dialog.close(); }
   dialog.addEventListener('close', function () {
     var was = state.openId, wasTask = state.openTaskId, wasWatch = state.openWatchId, wasFeed = state.openFeedId;
@@ -1236,6 +1247,7 @@
       input = el('input', { id: id, type: type, autocomplete: 'off' });
       if (col.type === 'currency') input.setAttribute('inputmode', 'decimal');
       if (col.type === 'person') input.setAttribute('list', 'peopleList');
+      if (key === 'folderLink') input.setAttribute('placeholder', 'Paste the link to this grant\'s folder');
       input.value = col.type === 'currency' ? shownValue(value) : value;
     }
 
@@ -1318,6 +1330,7 @@
     var tasks = store.items('tasks').filter(function (t) { return t.record === id; });
     var years = store.items('awardYears').filter(function (y) { return y.record === id; }).sort(function (a, b) { return a.year - b.year; });
     var custom = customCols();
+    var extras = S.parseExtras(r.extraFields);
 
     var body = el('div', { class: 'detailBody' }, [
       el('header', { class: 'detailHead' }, [
@@ -1325,7 +1338,7 @@
           el('h2', { id: 'detailName', text: r.name }),
           el('p', { class: 'detailStatus' }, [chip(shownStatus)].concat(derive.tags(r, today, dueDays()).map(tagEl)))
         ]),
-        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+        closeButtons()
       ]),
       el('p', { class: 'problem', hidden: true }),
       el('div', { class: 'fields' }, [
@@ -1342,14 +1355,15 @@
         field(r, 'startDate'),
         field(r, 'endDate'),
         field(r, 'next', { wide: true })
-      ]),
-      section('contact', [field(r, 'contactName'), field(r, 'contactEmail'), field(r, 'contactPhone')], !!(r.contactName || r.contactEmail || r.contactPhone)),
-      section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)], !!(r.comments || r.links || r.folderLink)),
+      ].concat(ownFields(r, 'main', custom, extras), [addFieldButton(r, 'main')])),
+      section('contact', [field(r, 'contactName'), field(r, 'contactEmail'), field(r, 'contactPhone')].concat(ownFields(r, 'contact', custom, extras), [addFieldButton(r, 'contact')]),
+        !!(r.contactName || r.contactEmail || r.contactPhone) || hasOwn(r, 'contact', custom, extras)),
+      section('notes', [field(r, 'comments', { wide: true }), field(r, 'links', { wide: true }), field(r, 'folderLink', { wide: true }), linksView(r)].concat(ownFields(r, 'notes', custom, extras), [addFieldButton(r, 'notes')]),
+        !!(r.comments || r.links || r.folderLink) || hasOwn(r, 'notes', custom, extras)),
       tasks.length || editor ? section('tasks', [taskList(tasks), editor ? addTaskForm(r) : null], true) : null,
       years.length ? section('awardYears', [yearList(years)], true) : null,
-      section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(custom.map(function (c) {
-        return field(r, c.key, { label: c.label, type: c.type, choices: c.type === 'choice' ? c.choices : null, wide: c.type === 'note' });
-      })), !!(r.watchDate || r.watchNote || custom.some(function (c) { return r[c.key] !== undefined && r[c.key] !== ''; }))),
+      section('more', [field(r, 'watchDate'), field(r, 'watchNote', { wide: true })].concat(ownFields(r, 'more', custom, extras), [addFieldButton(r, 'more')]),
+        !!(r.watchDate || r.watchNote) || hasOwn(r, 'more', custom, extras)),
       editor ? el('div', { class: 'detailActions' }, [
         r.watchDate ? null : el('button', { type: 'button', class: 'quietBtn', id: 'addToWatch', onclick: function () {
           openSections.more = true; openDetail(r.id, 'watchDate');
@@ -1395,8 +1409,8 @@
     var editor = isEditor();
     var body = el('div', { class: 'detailBody', 'data-task-view': id }, [
       el('header', { class: 'detailHead' }, [
-        el('div', {}, [el('h2', { id: 'detailName', text: t.title || 'Task' }), el('p', { class: 'detailStatus', id: 'taskStatus' }, taskStatus(t))]),
-        el('button', { type: 'button', class: 'link close', onclick: closeDetail, 'aria-label': 'Close' }, ['Close'])
+        el('div', {}, [el('h2', { id: 'detailName', text: t.title || 'To-do' }), el('p', { class: 'detailStatus', id: 'taskStatus' }, taskStatus(t))]),
+        closeButtons()
       ]),
       el('p', { class: 'problem', hidden: true }),
       rec ? el('p', { class: 'taskRecord' }, [el('button', { type: 'button', class: 'link', id: 'taskRecord', text: '← ' + rec.name, onclick: function () { openDetail(rec.id); } })]) : null,
@@ -1413,7 +1427,7 @@
 
   // After a task field saves: the heading, and the steps when they changed, without touching the fields
   function refreshTask(t, key) {
-    var h = dialog.querySelector('#detailName'); if (h) h.textContent = t.title || 'Task';
+    var h = dialog.querySelector('#detailName'); if (h) h.textContent = t.title || 'To-do';
     var st = dialog.querySelector('#taskStatus'); if (st) { st.innerHTML = ''; taskStatus(t).forEach(function (n) { st.appendChild(n); }); }
     if (key === 'steps' || key === 'assignedTo') { var old = dialog.querySelector('#taskSteps'); var fresh = stepsBlock(t); if (old && fresh) old.replaceWith(fresh); else if (old) old.remove(); else if (fresh) dialog.querySelector('.taskRecord, .problem').after(fresh); }
   }
@@ -1478,26 +1492,158 @@
   function setTaskDone(t, done) {
     store.update('tasks', t.id, { done: done }).then(function (res) {
       render(); openTask(t.id, '#taskDone');
-      toast(done ? 'Done: ' + (t.title || 'task') + '.' : 'Back on the list.', { list: 'tasks', before: res.before });
+      toast(done ? 'Done: ' + (t.title || 'to-do') + '.' : 'Back on the list.', { list: 'tasks', before: res.before });
     }).catch(showProblem);
   }
 
   function addTaskForm(r) {
     var input = el('input', { id: 'newTaskTitle', autocomplete: 'off' });
+    var who = el('input', { id: 'newTaskWho', autocomplete: 'off', list: 'peopleList', value: me() });
+    var due = el('input', { id: 'newTaskDue', type: 'date' });
     var form = el('form', { class: 'customAdd wide' }, [
-      el('div', { class: 'field' }, [el('label', { for: 'newTaskTitle', text: 'New task' }), input]),
-      el('button', { type: 'submit', class: 'quietBtn', id: 'addTask' }, ['Add task'])
+      el('div', { class: 'field' }, [el('label', { for: 'newTaskTitle', text: 'New to-do' }), input]),
+      el('div', { class: 'field' }, [el('label', { for: 'newTaskWho', text: 'Assigned to' }), who]),
+      el('div', { class: 'field' }, [el('label', { for: 'newTaskDue', text: 'Due date' }), due]),
+      el('button', { type: 'submit', class: 'quietBtn', id: 'addTask' }, ['Add to the to-do list'])
     ]);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var title = input.value.trim();
       if (!title) { input.focus(); return; }
-      store.add('tasks', { record: r.id, title: title, assignedTo: me(), done: false }).then(function (t) {
-        render(); openTask(t.id, '#f-dueDate');
-        toast('Task added.', { list: 'tasks', id: t.id, added: true });
+      var fields = { record: r.id, title: title, assignedTo: who.value.trim() || me(), done: false };
+      if (due.value) fields.dueDate = due.value;
+      store.add('tasks', fields).then(function (t) {
+        render(); openTask(t.id, due.value ? '#f-steps' : '#f-dueDate');
+        toast('Added to the to-do list.', { list: 'tasks', id: t.id, added: true });
       }).catch(showProblem);
     });
     return form;
+  }
+
+  // ---------- fields of your own on a record: for every record (Settings) or just this one ----------
+
+  function ownFields(r, sectionKey, custom, extras) {
+    return custom.filter(function (c) { return (c.section || 'more') === sectionKey; }).map(function (c) {
+      return field(r, c.key, { label: c.label, type: c.type, choices: c.type === 'choice' ? c.choices : null, wide: c.type === 'note' });
+    }).concat(extras.filter(function (x) { return x.section === sectionKey; }).map(function (x) { return extraField(r, x); }));
+  }
+  function hasOwn(r, sectionKey, custom, extras) {
+    return custom.some(function (c) { return (c.section || 'more') === sectionKey && r[c.key] !== undefined && r[c.key] !== ''; }) ||
+      extras.some(function (x) { return x.section === sectionKey && x.value !== ''; });
+  }
+
+  // A Records list made before this column existed gets it the first time it is needed
+  var extrasReady = null;
+  function saveExtras(r, next, note, focusSel) {
+    if (!extrasReady) extrasReady = rawStore.ensureColumn ? rawStore.ensureColumn('records', { key: 'ExtraFields', label: 'Fields for this record only', type: 'note' }) : Promise.resolve();
+    extrasReady.catch(function () { extrasReady = null; });
+    extrasReady.then(function () {
+      return store.update('records', r.id, { extraFields: next.length ? JSON.stringify(next) : '' });
+    }).then(function (res) {
+      render(); openDetail(r.id); var f = focusSel && dialog.querySelector(focusSel); if (f) f.focus();
+      toast(note || 'Saved.', { list: 'records', before: res.before, focus: focusSel });
+    }).catch(showProblem);
+  }
+
+  // A field that only this record has: saves as you leave it, like the rest, and can be taken off
+  function extraField(r, x) {
+    var id = 'fx-' + x.key;
+    if (!isEditor()) return readOnlyField({ type: x.type }, 'x-' + x.key, x.value, x.label, x.type === 'note');
+    var input;
+    if (x.type === 'note') { input = el('textarea', { id: id, rows: 2 }); input.value = x.value; }
+    else if (x.type === 'yesno') {
+      input = el('select', { id: id }, [el('option', { value: '', text: '' }), el('option', { value: 'Yes', text: 'Yes' }), el('option', { value: 'No', text: 'No' })]);
+      input.value = x.value === '' ? '' : derive.isYes(x.value) ? 'Yes' : 'No';
+    } else {
+      input = el('input', { id: id, autocomplete: 'off', type: { date: 'date', number: 'number' }[x.type] || 'text' });
+      if (x.type === 'currency') input.setAttribute('inputmode', 'decimal');
+      input.value = x.type === 'currency' ? shownValue(x.value) : x.value;
+    }
+    input.addEventListener('change', function () {
+      var v = input.value;
+      if (x.type === 'yesno') v = v === '' ? '' : v === 'Yes';
+      if (x.type === 'currency' || x.type === 'number') {
+        var cleaned = v.replace(/[$,\s]/g, '');
+        if (cleaned !== '' && !/^\d+(\.\d+)?$/.test(cleaned)) { showProblem(new Error(x.label + ' takes a number, like 45000.')); input.value = shownValue(x.value); return; }
+        v = cleaned === '' ? '' : Number(cleaned);
+      }
+      if (typeof v === 'string') v = v.replace(/\s+$/, '');
+      if (v === x.value) return;
+      var list = S.parseExtras(store.get('records', r.id).extraFields).map(function (y) { return y.key === x.key ? Object.assign({}, y, { value: v }) : y; });
+      saveExtras(r, list, 'Saved.', '#' + id);
+    });
+    if (input.tagName === 'INPUT') input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+    return el('div', { class: 'field own' + (x.type === 'note' ? ' wide' : '') }, [
+      el('span', { class: 'ownHead' }, [el('label', { for: id, text: x.label }),
+        el('button', { type: 'button', class: 'link takeOff', 'aria-label': 'Take ' + x.label + ' off this record', title: 'Take off this record', text: '×', onclick: function () {
+          var list = S.parseExtras(store.get('records', r.id).extraFields).filter(function (y) { return y.key !== x.key; });
+          saveExtras(r, list, x.label + ' taken off this record.');
+        } })]),
+      input
+    ]);
+  }
+
+  // The small + at the end of each part of a record: name the field, pick its kind, then say
+  // whether every record gets it or just this one
+  function addFieldButton(r, sectionKey) {
+    if (!isEditor()) return null;
+    var box = el('div', { class: 'addField wide', 'data-add-field': sectionKey });
+    function closed() {
+      box.innerHTML = '';
+      box.appendChild(el('button', { type: 'button', class: 'plus', id: 'addField-' + sectionKey, 'aria-label': 'Add a field to ' + sectionName(sectionKey), title: 'Add a field', text: '+', onclick: ask }));
+    }
+    function ask() {
+      box.innerHTML = '';
+      var name = el('input', { id: 'newOwnName-' + sectionKey, autocomplete: 'off' });
+      var kind = el('select', { id: 'newOwnKind-' + sectionKey });
+      S.TYPES.filter(function (t) { return t.key !== 'choice'; }).forEach(function (t) { kind.appendChild(el('option', { value: t.key, text: t.text })); });
+      var form = el('form', { class: 'customAdd' }, [
+        el('div', { class: 'field' }, [el('label', { for: name.id, text: 'New field' }), name]),
+        el('div', { class: 'field' }, [el('label', { for: kind.id, text: 'Kind' }), kind]),
+        el('button', { type: 'submit', class: 'quietBtn' }, ['Next']),
+        el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { closed(); box.querySelector('.plus').focus(); } })
+      ]);
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var label = name.value.replace(/[|;]/g, ' ').trim();
+        if (!label) { name.focus(); return; }
+        which(label, kind.value);
+      });
+      box.appendChild(form);
+      name.focus();
+    }
+    function which(label, type) {
+      box.innerHTML = '';
+      var every = el('button', { type: 'button', class: 'primary', id: 'ownEvery', onclick: function () { addForEvery(r, label, type, sectionKey); } }, ['Every record']);
+      box.appendChild(el('div', { class: 'whichFor', role: 'group', 'aria-label': 'Add ' + label + ' to' }, [
+        el('p', { text: 'Add "' + label + '" to every record, or just this one?' }),
+        el('div', { class: 'whichButtons' }, [every,
+          el('button', { type: 'button', class: 'quietBtn', id: 'ownJustThis', onclick: function () { addForThis(r, label, type, sectionKey); } }, ['Just this record']),
+          el('button', { type: 'button', class: 'link', text: 'Cancel', onclick: function () { closed(); box.querySelector('.plus').focus(); } })])
+      ]));
+      every.focus();
+    }
+    closed();
+    return box;
+  }
+
+  function addForEvery(r, label, type, sectionKey) {
+    var cols = customCols();
+    var col = { key: S.newKey(label, cols.map(function (x) { return x.key; })), label: label, type: type, choices: [], filter: true, section: sectionKey };
+    openSections[sectionKey] = true;
+    (rawStore.ensureColumn ? rawStore.ensureColumn('records', col) : Promise.resolve()).then(function () {
+      return setSetting('customColumns', S.formatCustom(cols.concat([col])), label + ' added to every record.');
+    }).then(function () {
+      openDetail(r.id, col.key);
+      if (state.undo) state.undo.focus = '#addField-' + sectionKey;
+    }).catch(function (e) { console.error(e); showProblem(new Error('That field could not be added: ' + e.message)); });
+  }
+
+  function addForThis(r, label, type, sectionKey) {
+    var list = S.parseExtras(store.get('records', r.id).extraFields);
+    var key = S.newKey(label, list.map(function (x) { return x.key; }));
+    openSections[sectionKey] = true;
+    saveExtras(r, list.concat([{ key: key, label: label, type: type, section: sectionKey, value: '' }]), label + ' added to this record.', '#fx-' + key);
   }
 
   var openSections = {};
@@ -1515,7 +1661,7 @@
     tasks.forEach(function (t) {
       var n = A.stepState(t, store.items('progress'));
       ul.appendChild(el('li', {}, [
-        el('button', { type: 'button', class: 'link', 'data-task': t.id, text: (t.done ? '✓ ' : '') + (t.title || 'Task'), onclick: function () { openTask(t.id); } }),
+        el('button', { type: 'button', class: 'link', 'data-task': t.id, text: (t.done ? '✓ ' : '') + (t.title || 'To-do'), onclick: function () { openTask(t.id); } }),
         el('span', { class: 'quiet', text: [t.type, niceDate(t.dueDate), t.assignedTo, n.done ? (n.done === 1 ? '1 step done' : n.done + ' steps done') : ''].filter(Boolean).join(' · ') })
       ]));
     });
@@ -1630,7 +1776,7 @@
     listEl.appendChild(box);
   }
 
-  // Your own fields: each shows under More details on every record; choice, date and
+  // Your own fields: each shows on every record, in the part you pick; choice, date and
   // yes-or-no fields also get a filter. Taking one off the page keeps what records hold.
   function customEditor() {
     var cols = customCols();
@@ -1647,6 +1793,11 @@
         el('div', { class: 'field' }, [el('label', { for: nameIn.id, text: 'Name' }), nameIn]),
         el('div', { class: 'field' }, [el('label', { for: typeSel.id, text: 'Kind' }), typeSel])
       ];
+      var secSel = el('select', { id: 'cf-section-' + c.key });
+      S.FIELD_SECTIONS.forEach(function (k) { secSel.appendChild(el('option', { value: k, text: sectionName(k) })); });
+      secSel.value = c.section || 'more';
+      secSel.addEventListener('change', function () { change({ section: secSel.value }, 'Now shows under ' + sectionName(secSel.value) + '.'); });
+      parts.push(el('div', { class: 'field' }, [el('label', { for: secSel.id, text: 'Shows under' }), secSel]));
       if (c.type === 'choice') {
         var ch = el('input', { id: 'cf-choices-' + c.key, autocomplete: 'off', value: c.choices.join(', ') });
         ch.addEventListener('change', function () { change({ choices: ch.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) }); });
@@ -1680,7 +1831,7 @@
       var name = newName.value.replace(/[|;]/g, ' ').trim();
       if (!name) { newName.focus(); return; }
       var taken = cols.map(function (x) { return x.key; });
-      var col = { key: S.newKey(name, taken), label: name, type: newType.value, choices: [], filter: true };
+      var col = { key: S.newKey(name, taken), label: name, type: newType.value, choices: [], filter: true, section: 'more' };
       setupOpen.custom = true;
       state.focusNext = 'cf-name-' + col.key;
       // On SharePoint the field needs its own column on Records first
@@ -1691,6 +1842,9 @@
     kids.push(addForm);
     return kids;
   }
+
+  $('homeLink').addEventListener('click', function (e) { e.preventDefault(); showHome(); $('homeLink').focus(); });
+  $('homeBtn').addEventListener('click', function () { showHome(); });
 
   $('setupBtn').addEventListener('click', function () {
     state.view = 'setup'; state.list = null;

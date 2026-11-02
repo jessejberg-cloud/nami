@@ -13,7 +13,7 @@
 
   Label keys:  tile.<tile>  status.<status>  statusNote.<status>  field.<column>  section.<name>
                filter.<key>  page.title
-  customColumns:  key|Label|type|choice one, choice two|filter   rows separated by ";"
+  customColumns:  key|Label|type|choice one, choice two|filter|section   rows separated by ";"
                   type is text, note, choice, date, yesno, number or currency; filter is on or off
 */
 (function (root) {
@@ -42,11 +42,12 @@
   ];
 
   var SECTIONS = [
+    { key: 'main', text: 'Main details' },
     { key: 'contact', text: 'Contact' },
     { key: 'notes', text: 'Notes and links' },
-    { key: 'tasks', text: 'Tasks' },
+    { key: 'tasks', text: 'To-do' },
     { key: 'awardYears', text: 'Award years' },
-    { key: 'taskDetails', text: 'Task details' },
+    { key: 'taskDetails', text: 'To-do details' },
     { key: 'feeds', text: 'Feeds' },
     { key: 'watchList', text: 'Watch list' },
     { key: 'more', text: 'More details' }
@@ -81,6 +82,17 @@
     { key: 'currency', text: 'Amount' }
   ];
   var TYPE_KEYS = TYPES.map(function (t) { return t.key; });
+  // The parts of a record a field of your own can show in
+  var FIELD_SECTIONS = ['main', 'contact', 'notes', 'more'];
+
+  // Fields added to just one record, kept on that record as JSON: [{ key, label, type, section, value }]
+  function parseExtras(s) {
+    var list;
+    try { list = JSON.parse(s || '[]'); } catch (e) { return []; }
+    return Array.isArray(list) ? list.filter(function (x) { return x && typeof x.key === 'string' && x.label; }).map(function (x) {
+      return { key: x.key, label: String(x.label), type: TYPE_KEYS.indexOf(x.type) === -1 ? 'text' : x.type, section: FIELD_SECTIONS.indexOf(x.section) === -1 ? 'more' : x.section, value: x.value === undefined ? '' : x.value };
+    }) : [];
+  }
 
   // Names a custom field may never take: the built-in Records columns and the ones every
   // SharePoint item carries
@@ -97,7 +109,8 @@
         label: p[1] || p[0],
         type: type,
         choices: (p[3] || '').split(',').map(function (c) { return c.trim(); }).filter(Boolean),
-        filter: p[4] ? p[4] !== 'off' : true
+        filter: p[4] ? p[4] !== 'off' : true,
+        section: FIELD_SECTIONS.indexOf(p[5]) !== -1 ? p[5] : 'more'
       };
     }).filter(function (c) {
       if (!/^[A-Za-z][A-Za-z0-9]*$/.test(c.key) || seen.indexOf(c.key.toLowerCase()) !== -1) return false;
@@ -111,7 +124,7 @@
   function formatCustom(columns) {
     return columns.map(function (c) {
       return [c.key, String(c.label || c.key).replace(/[|;]/g, ' ').trim(), c.type || 'text',
-        (c.choices || []).map(clean).filter(Boolean).join(', '), c.filter === false ? 'off' : 'on'].join('|');
+        (c.choices || []).map(clean).filter(Boolean).join(', '), c.filter === false ? 'off' : 'on', c.section || 'more'].join('|');
     }).join('; ');
   }
 
@@ -152,7 +165,7 @@
 
   var api = {
     makeLabels: makeLabels, labelGroups: labelGroups, TILES: TILES, SECTIONS: SECTIONS, TYPES: TYPES,
-    parseCustom: parseCustom, formatCustom: formatCustom, newKey: newKey, filterable: filterable,
+    parseCustom: parseCustom, formatCustom: formatCustom, parseExtras: parseExtras, FIELD_SECTIONS: FIELD_SECTIONS, newKey: newKey, filterable: filterable,
     normalLayout: normalLayout, moveTile: moveTile
   };
   root.NAMI = root.NAMI || {};
